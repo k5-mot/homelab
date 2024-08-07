@@ -1,0 +1,147 @@
+name: homelab-llm-stack
+
+services:
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: homelab-ollama
+    pull_policy: always
+    tty: true
+    restart: unless-stopped
+    env_file:
+      - ../proxy.env
+      - api.env
+    ports:
+      - 11434:11434
+    volumes:
+      - ./ollama:/root/ollama
+      - volume-ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  ollama-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: homelab-ollama-webui
+    restart: unless-stopped
+    env_file:
+      - ../proxy.env
+    depends_on:
+      - ollama
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - 30015:8080
+    environment:
+      - OLLAMA_BASE_URL=http://homelab-ollama:11434
+      # - OPENAI_API_BASE_URL=http://litellm:4000/v1
+      # - OPENAI_API_KEY=${LITELLM_API_KEY}
+      # - WEBUI_SECRET_KEY=
+      - WEBUI_AUTH=False
+    volumes:
+      - volume-ollama-webui:/app/backend/data
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    env_file:
+      - ../proxy.env
+      - api.env
+    environment:
+      - MASTER_KEY=${LITELLM_API_KEY}
+    ports:
+      - 4000:8000
+    volumes:
+      - ./litellm/config.yaml:/app/config.yaml
+    command: [ "--config", "/app/config.yaml", "--port", "8000" ]
+    restart: unless-stopped
+
+
+  langflow:
+    image: langflowai/langflow:latest
+    container_name: homelab-langflow
+    env_file:
+      - ../proxy.env
+      - api.env
+    ports:
+      - 7860:7860
+    depends_on:
+      - langflow-db
+    environment:
+      - LANGFLOW_DATABASE_URL=postgresql://langflow:langflow@langflow-db:5432/langflow
+    volumes:
+      - volume-langflow-db:/app/langflow
+    networks:
+      - network-langflow
+
+  langflow-db:
+    image: postgres:16
+    container_name: homelab-langflow-db
+    env_file:
+      - ../noproxy.env
+    environment:
+      POSTGRES_USER: langflow
+      POSTGRES_PASSWORD: langflow
+      POSTGRES_DB: langflow
+    ports:
+      - 5432:5432
+    volumes:
+      - volume-langflow-db:/var/lib/postgresql/data
+    networks:
+      - network-langflow
+
+
+  flowise:
+    image: flowiseai/flowise
+    restart: always
+    env_file:
+      - ../proxy.env
+      - api.env
+    environment:
+      - PORT=${PORT}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - IFRAME_ORIGINS=${IFRAME_ORIGINS}
+      - FLOWISE_USERNAME=${FLOWISE_USERNAME}
+      - FLOWISE_PASSWORD=${FLOWISE_PASSWORD}
+      - FLOWISE_FILE_SIZE_LIMIT=${FLOWISE_FILE_SIZE_LIMIT}
+      - DEBUG=${DEBUG}
+      - DATABASE_PATH=${DATABASE_PATH}
+      - DATABASE_TYPE=${DATABASE_TYPE}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_SSL=${DATABASE_SSL}
+      - DATABASE_SSL_KEY_BASE64=${DATABASE_SSL_KEY_BASE64}
+      - APIKEY_PATH=${APIKEY_PATH}
+      - SECRETKEY_PATH=${SECRETKEY_PATH}
+      - FLOWISE_SECRETKEY_OVERWRITE=${FLOWISE_SECRETKEY_OVERWRITE}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_PATH=${LOG_PATH}
+      - BLOB_STORAGE_PATH=${BLOB_STORAGE_PATH}
+      - DISABLE_FLOWISE_TELEMETRY=${DISABLE_FLOWISE_TELEMETRY}
+      - MODEL_LIST_CONFIG_JSON=${MODEL_LIST_CONFIG_JSON}
+    ports:
+      - '${PORT}:${PORT}'
+    volumes:
+      - ~/.flowise:/root/.flowise
+    entrypoint: /bin/sh -c "sleep 3; flowise start"
+
+
+networks:
+  # network-reverse-proxy:
+  #   external: true
+  network-ollama:
+    name: homelab-network-ollama
+  network-langflow:
+    name: homelab-network-langflow
+
+volumes:
+  volume-ollama:
+    name: homelab-volume-ollama
+  volume-ollama-webui:
+    name: homelab-volume-ollama-webui

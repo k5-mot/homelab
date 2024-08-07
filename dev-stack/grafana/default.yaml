@@ -1,0 +1,15 @@
+apiVersion: 1
+
+providers:
+
+- name: Machine Resource Monitor # A uniquely identifiable name for the provider
+  # folder: Services # The folder where to place the dashboards
+  type: file
+  options:
+    path: /var/lib/grafana/dashboards/machine.json
+
+- name: Docker Container Monitor # A uniquely identifiable name for the provider
+  # folder: Services # The folder where to place the dashboards
+  type: file
+  options:
+    path: /var/lib/grafana/dashboards/docker.json
