@@ -26,12 +26,12 @@ model_list:
   #     aws_secret_access_key: os.environ/AWS_SECRET_ACCESS_KEY
   #     aws_region_name: os.environ/AWS_REGION_NAME
 
-  # - model_name: llama3.1
-  #   litellm_params:
-  #     model: ollama/llama3.1
-  #     api_base: http://192.168.11.13:11434
-  #   model_info:
-  #     supports_function_calling: true
+  - model_name: llama3.1:8b
+    litellm_params:
+      model: ollama_chat/llama3.1:8b
+      api_base: http://192.168.11.13:11434
+    model_info:
+      supports_function_calling: true
 
 litellm_settings:
   num_retries: 3

@@ -373,12 +373,12 @@ services:
     image: docker.io/prom/node-exporter:latest
     container_name: homelab-node-exporter
     restart: always
+    command:
+      - '--path.rootfs=/host'
     env_file:
       - ../noproxy.env
     volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
+      - '/:/host:ro,rslave'
     networks:
       - network-grafana
 
@@ -402,44 +402,44 @@ services:
 
 networks:
   network-reverse-proxy:
-    name: network-homelab-reverse-proxy
+    name: homelab-network-reverse-proxy
     driver: bridge
   network-gitlab:
-    name: network-homelab-gitlab
+    name: homelab-network-gitlab
   network-redmine:
-    name: network-homelab-redmine
+    name: homelab-network-redmine
   network-homepage:
-    name: network-homelab-homepage
+    name: homelab-network-homepage
   network-jenkins:
-    name: network-homelab-jenkins
+    name: homelab-network-jenkins
   network-knowledge:
-    name: network-homelab-knowledge
+    name: homelab-network-knowledge
   network-nextcloud:
-    name: network-homelab-nextcloud
+    name: homelab-network-nextcloud
   network-grafana:
-    name: network-homelab-grafana
+    name: homelab-network-grafana
 
 
 volumes:
   volume-gitlab-runner:
-    name: volume-homelab-gitlab-runner
+    name: homelab-volume-gitlab-runner
   volume-redmine:
-    name: volume-homelab-redmine
+    name: homelab-volume-redmine
   volume-redmine-db:
-    name: volume-homelab-redmine-db
+    name: homelab-volume-redmine-db
   volume-jenkins:
-    name: volume-homelab-jenkins
+    name: homelab-volume-jenkins
   volume-jenkins-ssh-tmp:
-    name: volume-homelab-jenkins-ssh-tmp
+    name: homelab-volume-jenkins-ssh-tmp
   volume-jenkins-ssh-agent:
-    name: volume-homelab-jenkins-ssh-agent
+    name: homelab-volume-jenkins-ssh-agent
   volume-jenkins-ssh-dot:
-    name: volume-homelab-jenkins-ssh-dot
+    name: homelab-volume-jenkins-ssh-dot
   volume-jenkins-ssh-run:
-    name: volume-homelab-jenkins-ssh-run
+    name: homelab-volume-jenkins-ssh-run
   volume-jenkins-ssh-varrun:
-    name: volume-homelab-jenkins-ssh-varrun
+    name: homelab-volume-jenkins-ssh-varrun
   volume-prometheus:
-    name: volume-homelab-prometheus
+    name: homelab-volume-prometheus
   volume-phpldapadmin:
-    name: volume-homelab-openldap-ui
+    name: homelab-volume-openldap-ui

@@ -1,5 +1,7 @@
 # Homelab Stacks
 
+## :folder: Folder Structure
+
 - dev-stack
   - main features
   - behind reverse proxy

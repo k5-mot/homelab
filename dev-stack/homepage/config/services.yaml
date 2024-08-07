@@ -70,7 +70,7 @@
       icon: phpldapadmin.png
       description: えるだっぷのUI
       server: my-docker
-      container: homelab-openldap-ui
+      container: homelab-phpldapadmin
   - OpenLDAP:
       icon: phpldapadmin.png
       description: えるだっぷ
