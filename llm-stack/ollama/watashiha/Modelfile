@@ -1,1 +1,10 @@
 FROM ./watashiha-gpt-6b-q4_K_M.gguf
+
+PARAMETER num_predict 32
+PARAMETER top_p 0.9
+PARAMETER top_k 50
+PARAMETER stop "<EOD>"
+
+TEMPLATE """お題:{{ .Prompt }}<SEP> 回答:{{ .Response }}<EOD>"""
+
+MESSAGE user "ホラー映画の「○○○から逃げろ！」"
