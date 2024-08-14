@@ -18,12 +18,12 @@ gitlab_rails['gitlab_shell_ssh_port'] = 30022
 # nginx['redirect_http_to_https_port'] = 80
 
 # [OPTION] GitLab Container Registry
-# registry_external_url 'http://192.168.11.2/registry'
+registry_external_url 'http://192.168.11.2:5000'
 # gitlab_rails['registry_enabled'] = true
-# gitlab_rails['registry_api_url'] = "http://localhost:5000"
+# gitlab_rails['registry_api_url'] = "http://localhost:5001"
 # registry['enable'] = true
 # registry_nginx['enable'] = false
-# registry['registry_http_addr'] = "0.0.0.0:5000"
+# registry['registry_http_addr'] = "0.0.0.0:5001"
 
 # [OPTION] Optimize Puma
 # https://docs.gitlab.com/ee/administration/operations/puma.html

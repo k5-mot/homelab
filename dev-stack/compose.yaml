@@ -64,6 +64,11 @@ services:
     container_name: homelab-gitlab
     restart: always
     shm_size: 256m
+    ports:
+      # - 30080:80
+      # - 30443:443
+      - 30022:80
+      - 5000:5000
     environment:
       GITLAB_OMNIBUS_CONFIG: "from_file('/etc/gitlab/omnibus_config.rb')"
     volumes:
@@ -88,6 +93,41 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - network-gitlab
+
+
+  # https://docs.kroki.io/kroki/setup/use-docker-or-podman/#_run_multiple_kroki_containers_together
+  kroki:
+    image: docker.io/yuzutech/kroki
+    container_name: homelab-kroki
+    environment:
+      - KROKI_MERMAID_HOST=kroki-mermaid
+      - KROKI_BPMN_HOST=kroki-bpmn
+      - KROKI_EXCALIDRAW_HOST=kroki-excalidraw
+    networks:
+      - network-reverse-proxy
+      - network-kroki
+    depends_on:
+      - kroki-mermaid
+      - kroki-bpmn
+      - kroki-excalidraw
+
+  kroki-mermaid:
+    image: docker.io/yuzutech/kroki-mermaid
+    container_name: homelab-kroki-mermaid
+    networks:
+      - network-kroki
+
+  kroki-bpmn:
+    image: docker.io/yuzutech/kroki-bpmn
+    container_name: homelab-kroki-bpmn
+    networks:
+      - network-kroki
+
+  kroki-excalidraw:
+    image: docker.io/yuzutech/kroki-excalidraw
+    container_name: homelab-kroki-excalidraw
+    networks:
+      - network-kroki
 
 
   # https://github.com/jenkinsci/docker/blob/master/README.md
@@ -315,6 +355,113 @@ services:
       retries: 3
 
 
+  # https://miniflux.app/docs/docker.html
+  # https://miniflux.app/docs/howto.html#reverse-proxy-subfolder
+  miniflux:
+    image: miniflux/miniflux:latest
+    container_name: homelab-miniflux
+    environment:
+      - DATABASE_URL=postgres://miniflux_user:miniflux_pass@miniflux-db/miniflux_base?sslmode=disable
+      - RUN_MIGRATIONS=1
+      - CREATE_ADMIN=1
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin
+      - BASE_URL=http://192.168.11.2/miniflux/
+    networks:
+      - network-reverse-proxy
+      - network-miniflux
+    depends_on:
+      miniflux-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/usr/bin/miniflux", "-healthcheck", "auto"]
+
+  miniflux-db:
+    image: postgres:15
+    container_name: homelab-miniflux-db
+    environment:
+      - POSTGRES_USER=miniflux_user
+      - POSTGRES_PASSWORD=miniflux_pass
+      - POSTGRES_DB=miniflux_base
+    volumes:
+      - volume-miniflux-db:/var/lib/postgresql/data
+    networks:
+      - network-miniflux
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "miniflux_user"]
+      interval: 10s
+      start_period: 30s
+
+
+  # # https://doc.wallabag.org/en/admin/installation/installation.html#installation-with-docker
+  # # https://hub.docker.com/r/wallabag/wallabag/
+  # wallabag:
+  #   image: wallabag/wallabag
+  #   container_name: homelab-wallabag
+  #   ports:
+  #     - 8585:80
+  #   environment:
+  #     - MYSQL_ROOT_PASSWORD=wallaroot
+  #     - SYMFONY__ENV__DATABASE_DRIVER=pdo_mysql
+  #     - SYMFONY__ENV__DATABASE_HOST=wallabag-db
+  #     - SYMFONY__ENV__DATABASE_PORT=3306
+  #     - SYMFONY__ENV__DATABASE_NAME=wallabag_data
+  #     - SYMFONY__ENV__DATABASE_USER=wallabag_user
+  #     - SYMFONY__ENV__DATABASE_PASSWORD=wallabag_pass
+  #     - SYMFONY__ENV__DATABASE_CHARSET=utf8mb4
+  #     - SYMFONY__ENV__DATABASE_TABLE_PREFIX="wallabag_"
+  #     - SYMFONY__ENV__MAILER_DSN=smtp://127.0.0.1
+  #     - SYMFONY__ENV__FROM_EMAIL=wallabag@localhost
+  #     # - SYMFONY__ENV__DOMAIN_NAME=https://your-wallabag-instance.wallabag.org
+  #     - SYMFONY__ENV__DOMAIN_NAME=http://localhost:8585
+  #     - SYMFONY__ENV__SERVER_NAME="Your wallabag instance"
+  #   # ports:
+  #   #   - "80"
+  #   volumes:
+  #     - /opt/wallabag/images:/var/www/wallabag/web/assets/images
+  #   networks:
+  #     - network-reverse-proxy
+  #     - network-wallabag
+  #   healthcheck:
+  #     test: ["CMD", "wget" ,"--no-verbose", "--tries=1", "--spider", "http://localhost"]
+  #     interval: 1m
+  #     timeout: 3s
+  #   depends_on:
+  #     - wallabag-db
+  #     - wallabag-redis
+
+  # wallabag-db:
+  #   image: mariadb
+  #   container_name: homelab-wallabag-db
+  #   environment:
+  #     - MYSQL_ROOT_PASSWORD=wallaroot
+  #   volumes:
+  #     - /opt/wallabag/data:/var/lib/mysql
+  #   networks:
+  #     - network-wallabag
+  #   # healthcheck:
+  #   #   test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+  #   #   interval: 20s
+  #   #   timeout: 3s
+  #   healthcheck:
+  #     test: [ "CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized" ]
+  #     start_period: 1m
+  #     start_interval: 10s
+  #     interval: 1m
+  #     timeout: 5s
+  #     retries: 3
+
+  # wallabag-redis:
+  #   image: redis:alpine
+  #   container_name: homelab-wallabag-redis
+  #   networks:
+  #     - network-wallabag
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 20s
+  #     timeout: 3s
+
+
   # Initial Setup: username=admin, password=admin
   grafana:
     image: docker.io/grafana/grafana
@@ -393,6 +540,8 @@ networks:
     driver: bridge
   network-gitlab:
     name: homelab-network-gitlab
+  network-kroki:
+    name: homelab-network-kroki
   network-redmine:
     name: homelab-network-redmine
   network-homepage:
@@ -405,7 +554,10 @@ networks:
     name: homelab-network-nextcloud
   network-grafana:
     name: homelab-network-grafana
-
+  network-miniflux:
+    name: homelab-network-miniflux
+  network-wallabag:
+    name: homelab-network-wallabag
 
 volumes:
   volume-redmine:
@@ -428,3 +580,5 @@ volumes:
     name: homelab-volume-prometheus
   volume-phpldapadmin:
     name: homelab-volume-phpldapadmin
+  volume-miniflux-db:
+    name: homelab-volume-miniflux-db
