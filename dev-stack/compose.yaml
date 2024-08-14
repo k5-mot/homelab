@@ -374,11 +374,11 @@ services:
     container_name: homelab-node-exporter
     restart: always
     command:
-      - '--path.rootfs=/host'
+      - "--path.rootfs=/host"
     env_file:
       - ../noproxy.env
     volumes:
-      - '/:/host:ro,rslave'
+      - /:/host:ro,rslave
     networks:
       - network-grafana
 

@@ -1,0 +1,170 @@
+name: homelab-llm-stack
+
+services:
+
+  # https://docs.openwebui.com/getting-started/#docker-compose
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: homelab-open-webui
+    restart: unless-stopped
+    ports:
+      - 30100:8080
+    environment:
+      - OLLAMA_BASE_URL=http://homelab-ollama:11434
+      - OPENAI_API_BASE_URL=http://homelab-litellm:4000/v1;http://homelab-pipelines:9099
+      - OPENAI_API_KEY=sk-litellm;0p3n-w3bu!
+      # - WEBUI_SECRET_KEY=
+      - WEBUI_AUTH=False
+    volumes:
+      - volume-open-webui:/app/backend/data
+    networks:
+      - network-ollama
+    depends_on:
+      - ollama
+
+  # https://github.com/ollama/ollama/blob/main/docs/docker.md
+  ollama:
+    image: docker.io/ollama/ollama:latest
+    container_name: homelab-ollama
+    restart: unless-stopped
+    env_file:
+      - ../proxy.env
+    volumes:
+      - ./ollama:/root/ollama
+      - volume-ollama:/root/.ollama
+    networks:
+      - network-ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # https://github.com/ollama/ollama/blob/main/docs/faq.md#how-can-i-expose-ollama-on-my-network
+  # https://github.com/ollama/ollama/blob/main/docs/faq.md#how-do-i-use-ollama-behind-a-proxy
+  ollama-api:
+    image: docker.io/ollama/ollama:latest
+    container_name: homelab-ollama-api
+    restart: unless-stopped
+    ports:
+      - 30101:11434
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      # - http_proxy=
+      # - HTTP_PROXY=
+    volumes:
+      - ./ollama:/root/ollama
+      - volume-ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # https://github.com/open-webui/pipelines
+  pipelines:
+    image: ghcr.io/open-webui/pipelines:main
+    container_name: homelab-pipelines
+    restart: always
+    volumes:
+      - volume-pipelines:/app/pipelines
+    networks:
+      - network-ollama
+
+  # https://github.com/BerriAI/litellm
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: homelab-litellm
+    restart: unless-stopped
+    command: [ "--config", "/app/config.yaml", "--port", "4000" ]
+    env_file:
+      - ../proxy.env
+      - ./.env.local
+    environment:
+      - MASTER_KEY=sk-litellm
+    volumes:
+      - ./litellm/config.yaml:/app/config.yaml
+    networks:
+      - network-ollama
+
+  # https://docs.langflow.org/deployment-docker
+  langflow:
+    image: docker.io/langflowai/langflow:latest
+    container_name: homelab-langflow
+    ports:
+      - 30102:7860
+    # env_file:
+    #   - ../proxy.env
+    environment:
+      - LANGFLOW_DATABASE_URL=postgresql://langflow-user:langflow-pass@langflow-db:5432/langflow-base
+    volumes:
+      - volume-langflow:/app/langflow
+    networks:
+      - network-langflow
+    depends_on:
+      - langflow-db
+
+  langflow-db:
+    image: docker.io/postgres:16
+    container_name: homelab-langflow-db
+    environment:
+      POSTGRES_USER: langflow-user
+      POSTGRES_PASSWORD: langflow-pass
+      POSTGRES_DB: langflow-base
+    volumes:
+      - volume-langflow-db:/var/lib/postgresql/data
+    networks:
+      - network-langflow
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+
+  # https://github.com/FlowiseAI/Flowise/blob/main/docker/README.md
+  flowise:
+    image: docker.io/flowiseai/flowise
+    container_name: homelab-flowise
+    restart: always
+    entrypoint: /bin/sh -c "sleep 3; flowise start"
+    ports:
+      - 30103:3000
+    # env_file:
+    #   - ../proxy.env
+    environment:
+      - PORT=3000
+      - FLOWISE_USERNAME=flowise-user
+      - FLOWISE_PASSWORD=flowise-pass
+      - DATABASE_PATH=/root/.flowise
+      - APIKEY_PATH=/root/.flowise
+      - SECRETKEY_PATH=/root/.flowise
+      - LOG_PATH=/root/.flowise/logs
+      - BLOB_STORAGE_PATH=/root/.flowise/storage
+    volumes:
+      - /srv/flowise:/root/.flowise
+
+
+networks:
+  # network-reverse-proxy:
+  #   external: true
+  network-ollama:
+    name: homelab-network-ollama
+  network-langflow:
+    name: homelab-network-langflow
+
+volumes:
+  volume-ollama:
+    name: homelab-volume-ollama
+  volume-open-webui:
+    name: homelab-volume-open-webui
+  volume-pipelines:
+    name: homelab-volume-pipelines
+  volume-langflow:
+    name: homelab-volume-langflow
+  volume-langflow-db:
+    name: homelab-volume-langflow-db

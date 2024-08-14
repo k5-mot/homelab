@@ -1,9 +1,0 @@
-FROM ./llm-jp-13b-instruct-full-ac_001_16x-dolly-ichikara_004_001_single-oasst-oasst2-v2.0-Q4_K_M.gguf
-
-PARAMETER num_predict 100
-PARAMETER top_p 0.95
-PARAMETER temperature 0.7
-PARAMETER repeat_penalty 1.05
-
-MESSAGE system "以下は、タスクを説明する指示です。要求を適切に満たす応答を書きなさい。"
-MESSAGE user Is "自然言語処理とは何か"
