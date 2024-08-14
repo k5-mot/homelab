@@ -8,8 +8,12 @@ providers:
   options:
     path: /var/lib/grafana/dashboards/machine.json
 
-- name: Docker Container Monitor # A uniquely identifiable name for the provider
-  # folder: Services # The folder where to place the dashboards
+- name: Docker Container Monitor
   type: file
   options:
     path: /var/lib/grafana/dashboards/docker.json
+
+- name: NGINX Network Monitor
+  type: file
+  options:
+    path: /var/lib/grafana/dashboards/nginx.json

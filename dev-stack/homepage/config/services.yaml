@@ -2,19 +2,13 @@
 # For configuration options and examples, please see:
 # https://gethomepage.dev/latest/configs/services
 
-- Frontend Services in Operation:
+- 開発者向けサービス:
   - Homepage:
-      href: http://192.168.11.2/home/
+      href: http://192.168.11.2/
       icon: homepage.png
       description: ほーむ
       server: my-docker
       container: homelab-homepage
-  - Nginx:
-      href: http://192.168.11.2/
-      icon: nginx.svg
-      description: さーば、りばぷろ
-      server: my-docker
-      container: homelab-nginx
   - GitLab:
       href: http://192.168.11.2/gitlab/
       icon: gitlab.svg
@@ -53,18 +47,18 @@
       server: my-docker
       container: homelab-nextcloud
 
-- System Services in Operation:
+- 管理者向けサービス:
   - Cockpit:
-      href: http://192.168.11.2/cockpit/
+      href: http://192.168.11.2:9090
       icon: cockpit.png
       description: サーバ監視
       ping: localhost
-  - Portainer:
-      href: http://192.168.11.2/portainer/
-      icon: portainer.svg
-      description: どっかー
+  - Nginx:
+      href: http://192.168.11.2/nginx/
+      icon: nginx.svg
+      description: さーば、りばぷろ
       server: my-docker
-      container: homelab-portainer
+      container: homelab-nginx
   - phpLDAPadmin:
       href: http://192.168.11.2/openldap/
       icon: phpldapadmin.png
@@ -76,7 +70,14 @@
       description: えるだっぷ
       server: my-docker
       container: homelab-openldap
+  - Portainer:
+      href: http://192.168.11.2/portainer/
+      icon: portainer.svg
+      description: どっかー
+      server: my-docker
+      container: homelab-portainer
   - Grafana:
+      href: http://192.168.11.2/grafana/
       icon: grafana.svg
       description: さーば監視
       server: my-docker
@@ -86,6 +87,11 @@
       description: めとりくす
       server: my-docker
       container: homelab-prometheus
+  - Nginx Exporter:
+      icon: prometheus.svg
+      description: めとりくす収集
+      server: my-docker
+      container: homelab-nginx-exporter
   - Node Exporter:
       icon: prometheus.svg
       description: めとりくす収集
@@ -97,40 +103,7 @@
       server: my-docker
       container: homelab-cadvisor
 
-- Backend Services in Operation:
-  - GitLab Runner:
-      icon: gitlab.svg
-      description: ぎっと
-      server: my-docker
-      container: homelab-gitlab-runner
-  - Docker Socket Proxy:
-      icon: docker.svg
-      description: ほーむのDockerAPI用
-      server: my-docker
-      container: homelab-dockerproxy
-  - Jenkins SSH Agent:
-      icon: jenkins.png
-      description: CICD
-      server: my-docker
-      container: homelab-jenkins-ssh
-  - PostgreSQL for Redmine:
-      icon: postgres.svg
-      description: DB
-      server: my-docker
-      container: homelab-redmine-db
-  - PostgreSQL for Knowledge:
-      icon: postgres.svg
-      description: DB
-      server: my-docker
-      container: homelab-knowledge-db
-  - MariaDB for Nextcloud:
-      icon: mariadb.svg
-      description: DB
-      server: my-docker
-      container: homelab-nextcloud-db
-
-
-- Services in Experiment:
+- 実験中のサービス:
   - Open WebUI:
       href: http://192.168.11.2:30012/
       icon: open-webui.png
@@ -170,3 +143,36 @@
       description: In-Memory DB
       server: my-docker
       container: homelab-docmost-redis
+
+
+- 開発者向けサービス(バックエンド):
+  - GitLab Runner:
+      icon: gitlab.svg
+      description: ぎっと
+      server: my-docker
+      container: homelab-gitlab-runner
+  - Docker Socket Proxy:
+      icon: docker.svg
+      description: ほーむのDockerAPI用
+      server: my-docker
+      container: homelab-dockerproxy
+  - Jenkins SSH Agent:
+      icon: jenkins.png
+      description: CICD
+      server: my-docker
+      container: homelab-jenkins-ssh
+  - PostgreSQL for Redmine:
+      icon: postgres.svg
+      description: DB
+      server: my-docker
+      container: homelab-redmine-db
+  - PostgreSQL for Knowledge:
+      icon: postgres.svg
+      description: DB
+      server: my-docker
+      container: homelab-knowledge-db
+  - MariaDB for Nextcloud:
+      icon: mariadb.svg
+      description: DB
+      server: my-docker
+      container: homelab-nextcloud-db

@@ -21,3 +21,4 @@ scrape_configs:
         - homelab-prometheus:9090
         - homelab-node-exporter:9100
         - homelab-cadvisor:8080
+        - homelab-nginx-exporter:9113
