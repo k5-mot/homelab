@@ -77,7 +77,7 @@ services:
 
   # https://docs.gitlab.com/runner/install/docker.html
   gitlab-runner:
-    image: docker.io/gitlab/gitlab-runner:latest
+    image: docker.io/gitlab/gitlab-runner:alpine
     container_name: homelab-gitlab-runner
     restart: always
     env_file:

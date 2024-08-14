@@ -28,7 +28,7 @@ gitlab_rails['gitlab_shell_ssh_port'] = 30022
 # [OPTION] Optimize Puma
 # https://docs.gitlab.com/ee/administration/operations/puma.html
 # https://docs.gitlab.com/omnibus/settings/memory_constrained_envs.html#optimize-puma
-puma['per_worker_max_memory_mb'] = 1024 # 1GB
+# puma['per_worker_max_memory_mb'] = 1024 # 1GB
 # puma['worker_processes'] = 0 # Experimental feature
 
 # [OPTION] Optimize Redis
@@ -37,26 +37,26 @@ sidekiq['max_concurrency'] = 10
 
 # [OPTION] Optimize Gitaly
 # https://docs.gitlab.com/omnibus/settings/memory_constrained_envs.html#optimize-gitaly
-gitaly['configuration'] = {
-  concurrency: [
-    {
-      'rpc' => "/gitaly.SmartHTTPService/PostReceivePack",
-      'max_per_repo' => 3,
-    }, {
-      'rpc' => "/gitaly.SSHService/SSHUploadPack",
-      'max_per_repo' => 3,
-    },
-  ],
-  cgroups: {
-    repositories: {
-      count: 2,
-    },
-    mountpoint: '/sys/fs/cgroup',
-    hierarchy_root: 'gitaly',
-    memory_bytes: 500000,
-    cpu_shares: 512,
-  },
-}
+# gitaly['configuration'] = {
+#   concurrency: [
+#     {
+#       'rpc' => "/gitaly.SmartHTTPService/PostReceivePack",
+#       'max_per_repo' => 3,
+#     }, {
+#       'rpc' => "/gitaly.SSHService/SSHUploadPack",
+#       'max_per_repo' => 3,
+#     },
+#   ],
+#   cgroups: {
+#     repositories: {
+#       count: 2,
+#     },
+#     mountpoint: '/sys/fs/cgroup',
+#     hierarchy_root: 'gitaly',
+#     memory_bytes: 500000,
+#     cpu_shares: 512,
+#   },
+# }
 gitaly['env'] = {
   'MALLOC_CONF' => 'dirty_decay_ms:1000,muzzy_decay_ms:1000',
   'GITALY_COMMAND_SPAWN_MAX_PARALLEL' => '2'
