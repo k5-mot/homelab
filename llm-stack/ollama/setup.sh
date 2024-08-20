@@ -4,10 +4,13 @@ cd /root/ollama
 model_dir="/root/ollama/model"
 
 # Setup
-# apt update
-# apt upgrade -y
-# apt autoremove -y
-apt install -y wget
+apt-get update
+# apt-get upgrade -y
+# apt-get autoremove -y
+apt-get install -y wget
+
+export http_proxy=
+export HTTP_PROXY=
 
 # Pull LLM models
 ollama pull llama3.1:8b

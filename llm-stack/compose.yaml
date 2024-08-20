@@ -3,6 +3,31 @@ name: homelab-llm-stack
 services:
 
  # https://github.com/ollama/ollama/blob/main/docs/docker.md
+  ollama-setup:
+    image: docker.io/ollama/ollama:latest
+    container_name: homelab-ollama-setup
+    entrypoint: "/root/ollama/setup.sh"
+    command: [""]
+    env_file:
+      - ../base.env
+      - ../proxy.env
+    # environment:
+    #   - http_proxy=
+    #   - HTTP_PROXY=
+    volumes:
+      - ./ollama:/root/ollama
+      - volume-ollama:/root/.ollama
+    networks:
+      - network-ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+ # https://github.com/ollama/ollama/blob/main/docs/docker.md
   ollama:
     image: docker.io/ollama/ollama:latest
     container_name: homelab-ollama
@@ -11,16 +36,18 @@ services:
       - 30100:11434
     env_file:
       - ../base.env
-      - ../proxy.env
+      # - ../proxy.env
     environment:
-      - http_proxy=
-      - HTTP_PROXY=
+      # - http_proxy=
+      # - HTTP_PROXY=
       - OLLAMA_HOST=0.0.0.0
     volumes:
       - ./ollama:/root/ollama
       - volume-ollama:/root/.ollama
     networks:
       - network-ollama
+    depends_on:
+      - ollama-setup
     deploy:
       resources:
         reservations:
