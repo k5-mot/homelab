@@ -15,6 +15,12 @@
       description: ぎっと
       server: my-docker
       container: homelab-gitlab
+  - Kroki!:
+      href: http://192.168.11.2/kroki/
+      icon: diagrams-net.svg
+      description: 作図
+      server: my-docker
+      container: homelab-kroki
   - Redmine:
       href: http://192.168.11.2/redmine/
       icon: si-redmine-#B32024
@@ -46,6 +52,13 @@
       description: すとれーじ
       server: my-docker
       container: homelab-nextcloud
+  - Miniflux:
+      href: http://192.168.11.2/miniflux/
+
+      icon: miniflux.svg
+      description: RSS
+      server: my-docker
+      container: homelab-miniflux
 
 - 管理者向けサービス:
   - Cockpit:
@@ -176,3 +189,23 @@
       description: DB
       server: my-docker
       container: homelab-nextcloud-db
+  - PostgreSQL for Miniflux:
+      icon: postgres.svg
+      description: DB
+      server: my-docker
+      container: homelab-miniflux-db
+  - Kroki!-Mermaid:
+      icon: si-mermaid-#ff3670
+      description: 作図
+      server: my-docker
+      container: homelab-kroki-mermaid
+  - Kroki!-bpmn:
+      icon: diagrams-net.svg
+      description: 作図
+      server: my-docker
+      container: homelab-kroki-bpmn
+  - Kroki!-excalidraw:
+      icon: excalidraw.svg
+      description: 作図
+      server: my-docker
+      container: homelab-kroki-excalidraw
