@@ -26,33 +26,33 @@ model_list:
   #     aws_secret_access_key: os.environ/AWS_SECRET_ACCESS_KEY
   #     aws_region_name: os.environ/AWS_REGION_NAME
 
-  - model_name: llama3.1:8b
-    litellm_params:
-      model: ollama_chat/llama3.1:8b
-      api_base: http://homelab-ollama:11434
-    model_info:
-      supports_function_calling: true
+  # - model_name: llama3.1:8b
+  #   litellm_params:
+  #     model: ollama_chat/llama3.1:8b
+  #     api_base: http://homelab-ollama:11434
+  #   model_info:
+  #     supports_function_calling: true
 
-  - model_name: deepseek-coder-v2:16b
-    litellm_params:
-      model: ollama_chat/deepseek-coder-v2:16b
-      api_base: http://homelab-ollama:11434
-    model_info:
-      supports_function_calling: true
+  # - model_name: deepseek-coder-v2:16b
+  #   litellm_params:
+  #     model: ollama_chat/deepseek-coder-v2:16b
+  #     api_base: http://homelab-ollama:11434
+  #   model_info:
+  #     supports_function_calling: true
 
-  - model_name: elyza3:8b
-    litellm_params:
-      model: ollama_chat/elyza3:8b
-      api_base: http://homelab-ollama:11434
-    model_info:
-      supports_function_calling: true
+  # - model_name: elyza3:8b
+  #   litellm_params:
+  #     model: ollama_chat/elyza3:8b
+  #     api_base: http://homelab-ollama:11434
+  #   model_info:
+  #     supports_function_calling: true
 
-  - model_name: llm-jp:13b
-    litellm_params:
-      model: ollama_chat/llm-jp:13b
-      api_base: http://homelab-ollama:11434
-    model_info:
-      supports_function_calling: true
+  # - model_name: llm-jp:13b
+  #   litellm_params:
+  #     model: ollama_chat/llm-jp:13b
+  #     api_base: http://homelab-ollama:11434
+  #   model_info:
+  #     supports_function_calling: true
 
 litellm_settings:
   num_retries: 3
