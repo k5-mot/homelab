@@ -2,78 +2,25 @@ name: homelab-llm-stack
 
 services:
 
-  # https://docs.openwebui.com/getting-started/#docker-compose
-  open-webui:
-    image: ghcr.io/open-webui/open-webui:main
-    container_name: homelab-open-webui
-    restart: unless-stopped
-    ports:
-      - 0.0.0.0:30100:8080
-    extra_hosts:
-      - host.docker.internal:host-gateway
-    environment:
-      - WEBUI_URL=http://192.168.11.13:30100
-      - OLLAMA_BASE_URL=http://homelab-ollama:11434
-      - OPENAI_API_BASE_URL=http://homelab-litellm:4000/v1;http://homelab-pipelines:9099
-      - OPENAI_API_KEY=sk-litellm;0p3n-w3bu!
-      - WEBUI_SECRET_KEY=t0p-s3cr3t
-      # - WEBUI_AUTH=False
-      - ENABLE_OLLAMA_API=false
-      # - WEBUI_NAME=MOTAI
-    volumes:
-      - volume-open-webui:/app/backend/data
-    networks:
-      - network-ollama
-    depends_on:
-      - ollama
-
-  hollama:
-    image: ghcr.io/fmaclen/hollama:latest
-    container_name: homelab-hollama
-    restart: unless-stopped
-    ports:
-      - 30110:4173
-    networks:
-      - network-ollama
-    depends_on:
-      - ollama
-
-  # https://github.com/ollama/ollama/blob/main/docs/docker.md
+ # https://github.com/ollama/ollama/blob/main/docs/docker.md
   ollama:
     image: docker.io/ollama/ollama:latest
     container_name: homelab-ollama
     restart: unless-stopped
+    ports:
+      - 30100:11434
     env_file:
+      - ../base.env
       - ../proxy.env
     environment:
       - http_proxy=
       - HTTP_PROXY=
-    volumes:
-      - ./ollama:/root/ollama
-      - volume-ollama:/root/.ollama
-    networks:
-      - network-ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-
-  # https://github.com/ollama/ollama/blob/main/docs/faq.md#how-can-i-expose-ollama-on-my-network
-  # https://github.com/ollama/ollama/blob/main/docs/faq.md#how-do-i-use-ollama-behind-a-proxy
-  ollama-api:
-    image: docker.io/ollama/ollama:latest
-    container_name: homelab-ollama-api
-    restart: unless-stopped
-    ports:
-      - 30101:11434
-    environment:
       - OLLAMA_HOST=0.0.0.0
     volumes:
       - ./ollama:/root/ollama
       - volume-ollama:/root/.ollama
+    networks:
+      - network-ollama
     deploy:
       resources:
         reservations:
@@ -81,16 +28,6 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-
-  # https://github.com/open-webui/pipelines
-  pipelines:
-    image: ghcr.io/open-webui/pipelines:main
-    container_name: homelab-pipelines
-    restart: always
-    volumes:
-      - volume-pipelines:/app/pipelines
-    networks:
-      - network-ollama
 
   # https://github.com/BerriAI/litellm
   litellm:
@@ -98,11 +35,9 @@ services:
     container_name: homelab-litellm
     restart: unless-stopped
     command: [ "--config", "/app/config.yaml", "--port", "4000" ]
-    # ports:
-    #   - 30104:4000
     env_file:
-      - ../proxy.env
-      - ./.env.local
+      - ../base.env
+      - .env
     environment:
       - MASTER_KEY=sk-litellm
     volumes:
@@ -110,64 +45,102 @@ services:
     networks:
       - network-ollama
 
-  # https://docs.langflow.org/deployment-docker
-  langflow:
-    image: docker.io/langflowai/langflow:latest
-    container_name: homelab-langflow
-    restart: unless-stopped
-    ports:
-      - 30102:7860
-    # env_file:
-    #   - ../proxy.env
-    environment:
-      - LANGFLOW_DATABASE_URL=postgresql://langflow_user:langflow_pass@langflow-db:5432/langflow_base
-    volumes:
-      - volume-langflow:/app/langflow
-    networks:
-      - network-langflow
-    depends_on:
-      - langflow-db
-
-  langflow-db:
-    image: docker.io/postgres:16
-    container_name: homelab-langflow-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: langflow_user
-      POSTGRES_PASSWORD: langflow_pass
-      POSTGRES_DB: langflow_base
-    volumes:
-      - volume-langflow-db:/var/lib/postgresql/data
-    networks:
-      - network-langflow
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 5s
-
-  # https://github.com/FlowiseAI/Flowise/blob/main/docker/README.md
-  flowise:
-    image: docker.io/flowiseai/flowise
-    container_name: homelab-flowise
+  # https://github.com/open-webui/pipelines
+  pipelines:
+    image: ghcr.io/open-webui/pipelines:main
+    container_name: homelab-pipelines
     restart: always
-    entrypoint: /bin/sh -c "sleep 3; flowise start"
-    ports:
-      - 30103:3000
-    # env_file:
-    #   - ../proxy.env
-    environment:
-      - PORT=3000
-      - FLOWISE_USERNAME=flowise-user
-      - FLOWISE_PASSWORD=flowise-pass
-      - DATABASE_PATH=/root/.flowise
-      - APIKEY_PATH=/root/.flowise
-      - SECRETKEY_PATH=/root/.flowise
-      - LOG_PATH=/root/.flowise/logs
-      - BLOB_STORAGE_PATH=/root/.flowise/storage
+    env_file:
+      - ../base.env
     volumes:
-      - /srv/flowise:/root/.flowise
+      - volume-pipelines:/app/pipelines
+    networks:
+      - network-ollama
+
+
+  # https://docs.openwebui.com/getting-started/#docker-compose
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: homelab-open-webui
+    restart: unless-stopped
+    ports:
+      - 30110:8080
+    env_file:
+      - ../base.env
+      - .env
+    environment:
+      - OLLAMA_BASE_URL=http://homelab-ollama:11434
+      - OPENAI_API_BASE_URL=http://homelab-litellm:4000/v1;http://homelab-pipelines:9099
+      - OPENAI_API_KEY=sk-litellm;0p3n-w3bu!
+      # - WEBUI_AUTH=False
+    volumes:
+      - volume-open-webui:/app/backend/data
+      # - ./docs/:/app/backend/data/docs:ro
+    networks:
+      - network-ollama
+    depends_on:
+      - ollama
+
+  # # https://docs.langflow.org/deployment-docker
+  # langflow:
+  #   image: docker.io/langflowai/langflow:latest
+  #   container_name: homelab-langflow
+  #   restart: unless-stopped
+  #   ports:
+  #     - 30111:7860
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     - LANGFLOW_DATABASE_URL=postgresql://langflow_user:langflow_pass@langflow-db:5432/langflow_base
+  #   volumes:
+  #     - volume-langflow:/app/langflow
+  #   networks:
+  #     - network-langflow
+  #   depends_on:
+  #     - langflow-db
+
+  # langflow-db:
+  #   image: docker.io/postgres:16
+  #   container_name: homelab-langflow-db
+  #   restart: unless-stopped
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     POSTGRES_USER: langflow_user
+  #     POSTGRES_PASSWORD: langflow_pass
+  #     POSTGRES_DB: langflow_base
+  #   volumes:
+  #     - volume-langflow-db:/var/lib/postgresql/data
+  #   networks:
+  #     - network-langflow
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1"]
+  #     interval: 10s
+  #     timeout: 10s
+  #     retries: 5
+  #     start_period: 5s
+
+  # # https://github.com/FlowiseAI/Flowise/blob/main/docker/README.md
+  # flowise:
+  #   image: docker.io/flowiseai/flowise
+  #   container_name: homelab-flowise
+  #   restart: always
+  #   entrypoint: /bin/sh -c "sleep 3; flowise start"
+  #   ports:
+  #     - 30112:3000
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     - PORT=3000
+  #     - FLOWISE_USERNAME=flowise-user
+  #     - FLOWISE_PASSWORD=flowise-pass
+  #     - DATABASE_PATH=/root/.flowise
+  #     - APIKEY_PATH=/root/.flowise
+  #     - SECRETKEY_PATH=/root/.flowise
+  #     - LOG_PATH=/root/.flowise/logs
+  #     - BLOB_STORAGE_PATH=/root/.flowise/storage
+  #   volumes:
+  #     - /srv/flowise:/root/.flowise
 
 
 networks:
