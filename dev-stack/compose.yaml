@@ -10,6 +10,8 @@ services:
     ports:
       - 80:80
       - 443:443
+    env_file:
+      - ../base.env
     volumes:
       - ./nginx/public:/usr/share/nginx/html:rw
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
@@ -21,6 +23,8 @@ services:
   openldap:
     image: docker.io/osixia/openldap
     container_name: homelab-openldap
+    env_file:
+      - ../base.env
     environment:
       LDAP_ORGANISATION: "OpenLDAP"
       LDAP_DOMAIN: "openldap.com"
@@ -34,6 +38,8 @@ services:
   phpldapadmin:
     image: docker.io/osixia/phpldapadmin
     container_name: homelab-phpldapadmin
+    env_file:
+      - ../base.env
     environment:
       PHPLDAPADMIN_LDAP_HOSTS: openldap
       PHPLDAPADMIN_HTTPS: false
@@ -51,6 +57,8 @@ services:
     container_name: homelab-portainer
     restart: always
     privileged: true
+    env_file:
+      - ../base.env
     volumes:
       - /srv/portainer/data:/data
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -69,6 +77,8 @@ services:
       # - 30443:443
       - 30022:80
       - 5000:5000
+    env_file:
+      - ../base.env
     environment:
       GITLAB_OMNIBUS_CONFIG: "from_file('/etc/gitlab/omnibus_config.rb')"
     volumes:
@@ -86,6 +96,7 @@ services:
     container_name: homelab-gitlab-runner
     restart: always
     env_file:
+      - ../base.env
       - ../proxy.env
     volumes:
       - /srv/gitlab-runner/config:/etc/gitlab-runner
@@ -99,6 +110,8 @@ services:
   kroki:
     image: docker.io/yuzutech/kroki
     container_name: homelab-kroki
+    env_file:
+      - ../base.env
     environment:
       - KROKI_MERMAID_HOST=kroki-mermaid
       - KROKI_BPMN_HOST=kroki-bpmn
@@ -114,18 +127,24 @@ services:
   kroki-mermaid:
     image: docker.io/yuzutech/kroki-mermaid
     container_name: homelab-kroki-mermaid
+    env_file:
+      - ../base.env
     networks:
       - network-kroki
 
   kroki-bpmn:
     image: docker.io/yuzutech/kroki-bpmn
     container_name: homelab-kroki-bpmn
+    env_file:
+      - ../base.env
     networks:
       - network-kroki
 
   kroki-excalidraw:
     image: docker.io/yuzutech/kroki-excalidraw
     container_name: homelab-kroki-excalidraw
+    env_file:
+      - ../base.env
     networks:
       - network-kroki
 
@@ -134,8 +153,9 @@ services:
   jenkins:
     image: docker.io/jenkins/jenkins:lts
     container_name: homelab-jenkins
-    # env_file:
-    #   - ../proxy.env
+    env_file:
+      - ../base.env
+      - ../proxy.env
     environment:
       - "JENKINS_OPTS=--prefix=/jenkins"
     volumes:
@@ -147,6 +167,8 @@ services:
   jenkins-ssh:
     image: docker.io/jenkins/ssh-agent:latest
     container_name: homelab-jenkins-ssh
+    env_file:
+      - ../base.env
     volumes:
       - volume-jenkins-ssh-agent:/home/jenkins/agent
       - volume-jenkins-ssh-tmp:/tmp
@@ -163,6 +185,8 @@ services:
       context: .
       dockerfile: ./redmine/Dockerfile
     container_name: homelab-redmine
+    env_file:
+      - ../base.env
     environment:
       REDMINE_DB_POSTGRES: homelab-redmine-db
       REDMINE_DB_DATABASE: redmine
@@ -189,6 +213,8 @@ services:
   redmine-db:
     image: docker.io/postgres:16.3
     container_name: homelab-redmine-db
+    env_file:
+      - ../base.env
     environment:
       POSTGRES_DB:       redmine
       POSTGRES_USER:     redmine_user
@@ -210,6 +236,8 @@ services:
     container_name: homelab-dockerproxy
     restart: unless-stopped
     privileged: true
+    env_file:
+      - ../base.env
     environment:
       - CONTAINERS=1 # Allow access to viewing containers
       - SERVICES=0 # Allow access to viewing services (necessary when using Docker Swarm)
@@ -232,6 +260,8 @@ services:
     container_name: homelab-homepage
     restart: unless-stopped
     privileged: true
+    env_file:
+      - ../base.env
     # environment:
     #   # use `id` command
     #   PUID: 1000
@@ -254,6 +284,9 @@ services:
     container_name: homelab-coder
     restart: always
     privileged: true
+    env_file:
+      - ../base.env
+      # - ../proxy.env
     environment:
       - UID=1000
       - GID=1000
@@ -284,6 +317,8 @@ services:
       dockerfile: ./knowledge/Dockerfile
     container_name: homelab-knowledge
     restart: always
+    env_file:
+      - ../base.env
     volumes:
       - ./knowledge/custom_connection.xml:/root/.knowledge/custom_connection.xml
       - /srv/knowledge:/root/.knowledge
@@ -297,6 +332,8 @@ services:
     image: docker.io/postgres:9
     container_name: homelab-knowledge-db
     restart: always
+    env_file:
+      - ../base.env
     environment:
       - POSTGRES_USER=knowledge_user
       - POSTGRES_PASSWORD=knowledge_password
@@ -318,6 +355,8 @@ services:
     image: docker.io/nextcloud
     container_name: homelab-nextcloud
     restart: always
+    env_file:
+      - ../base.env
     environment:
       - MYSQL_HOST=nextcloud-db
       - MYSQL_DATABASE=nextcloud
@@ -337,6 +376,8 @@ services:
     image: docker.io/mariadb
     container_name: homelab-nextcloud-db
     restart: always
+    env_file:
+      - ../base.env
     environment:
       - MARIADB_DATABASE=nextcloud
       - MARIADB_ROOT_PASSWORD=nextcloud_root_pw
@@ -360,6 +401,8 @@ services:
   miniflux:
     image: miniflux/miniflux:latest
     container_name: homelab-miniflux
+    env_file:
+      - ../base.env
     environment:
       - DATABASE_URL=postgres://miniflux_user:miniflux_pass@miniflux-db/miniflux_base?sslmode=disable
       - RUN_MIGRATIONS=1
@@ -379,6 +422,8 @@ services:
   miniflux-db:
     image: postgres:15
     container_name: homelab-miniflux-db
+    env_file:
+      - ../base.env
     environment:
       - POSTGRES_USER=miniflux_user
       - POSTGRES_PASSWORD=miniflux_pass
@@ -467,6 +512,8 @@ services:
     image: docker.io/grafana/grafana
     container_name: homelab-grafana
     restart: always
+    env_file:
+      - ../base.env
     environment:
       GF_SERVER_ROOT_URL: http://homelab-grafana:3000/grafana/
       GF_PATHS_PROVISIONING: /etc/grafana/provisioning
@@ -487,6 +534,8 @@ services:
     container_name: homelab-prometheus
     restart: always
     command: "--config.file=/etc/prometheus/prometheus.yaml"
+    env_file:
+      - ../base.env
     volumes:
       - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
       - volume-prometheus:/prometheus
@@ -503,6 +552,8 @@ services:
     restart: always
     command:
       - --nginx.scrape-uri=http://homelab-nginx:8080/stub_status
+    env_file:
+      - ../base.env
     networks:
       - network-grafana
       - network-reverse-proxy
@@ -513,6 +564,8 @@ services:
     restart: always
     command:
       - "--path.rootfs=/host"
+    env_file:
+      - ../base.env
     volumes:
       - /:/host:ro,rslave
     networks:
@@ -522,6 +575,8 @@ services:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: homelab-cadvisor
     privileged: true
+    env_file:
+      - ../base.env
     devices:
       - /dev/kmsg
     volumes:
