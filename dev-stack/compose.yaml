@@ -89,6 +89,8 @@ services:
     networks:
       - network-reverse-proxy
       - network-gitlab
+      - network-prometheus
+      - network-grafana
 
   # https://docs.gitlab.com/runner/install/docker.html
   gitlab-runner:
@@ -541,6 +543,7 @@ services:
       - volume-prometheus:/prometheus
     networks:
       - network-grafana
+      - network-prometheus
     depends_on:
       - nginx-exporter
       - node-exporter
@@ -555,7 +558,7 @@ services:
     env_file:
       - ../base.env
     networks:
-      - network-grafana
+      - network-prometheus
       - network-reverse-proxy
 
   node-exporter:
@@ -569,7 +572,7 @@ services:
     volumes:
       - /:/host:ro,rslave
     networks:
-      - network-grafana
+      - network-prometheus
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
@@ -586,7 +589,28 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
     networks:
-      - network-grafana
+      - network-prometheus
+
+  jupyterhub:
+    image: jupyterhub:localbuild
+    build:
+      context: .
+      dockerfile: ./jupyter/Dockerfile
+      network: host
+    # dns:
+    #   - 8.8.8.8
+    container_name: homelab-jupyterhub
+    privileged: true
+    ports:
+      - 8000:8000
+      - 8001:8001
+    # env_file:
+    #   - ../base.env
+    volumes:
+      - ./jupyter/jupyterhub_config.py:/etc/jupyterhub/jupyterhub_config.py:ro
+      - ./jupyter/add_user.sh:/etc/jupyterhub/add_user.sh:rx
+    networks:
+      - network-reverse-proxy
 
 
 networks:
@@ -609,6 +633,8 @@ networks:
     name: homelab-network-nextcloud
   network-grafana:
     name: homelab-network-grafana
+  network-prometheus:
+    name: homelab-network-prometheus
   network-miniflux:
     name: homelab-network-miniflux
   network-wallabag:

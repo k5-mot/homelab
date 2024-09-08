@@ -2,7 +2,7 @@
 # https://docs.gitlab.com/omnibus/settings/memory_constrained_envs.html
 # https://qiita.com/KO_YAmajun/items/1a511a3378a67358bb04
 # https://qiita.com/KO_YAmajun/items/b4e894f72697348e3beb
-
+roles ['monitoring_role']
 external_url 'http://192.168.11.2/gitlab'
 # gitlab_rails['initial_root_password'] = 'root'
 gitlab_rails['time_zone'] = 'Tokyo'
@@ -64,9 +64,21 @@ gitaly['env'] = {
 
 # [OPTION] Disable monitoring by Prometheus/Grafana/Alertmanager
 # https://docs.gitlab.com/omnibus/settings/memory_constrained_envs.html#disable-monitoring
-prometheus_monitoring['enable'] = false
+prometheus_monitoring['enable'] = true
+prometheus['enable'] = true
+prometheus['listen_address'] = '0.0.0.0:9090'
+prometheus['monitor_kubernetes'] = false
+gitlab_exporter['enable'] = true
+
+# Enable service discovery for Prometheus
+consul['enable'] = true
+consul['monitoring_service_discovery'] = true
+consul['configuration'] = {
+   retry_join: %w(10.0.0.1 10.0.0.2 10.0.0.3), # The addresses can be IPs or FQDNs
+}
+
 grafana['enable'] = false
-prometheus['enable'] = false
+
 alertmanager['enable'] = false
 
 # [OPTION] Configure how GitLab handles memory
