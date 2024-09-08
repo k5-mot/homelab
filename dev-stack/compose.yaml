@@ -599,7 +599,7 @@ services:
     container_name: homelab-jupyterlab
     privileged: true
     command:
-      jupyter-lab --ip 0.0.0.0 --allow-root -b localhost --NotebookApp.token='k5-mot'
+      jupyter-lab --ip 0.0.0.0 --allow-root -b localhost --config='/root/workspace/jupyter_notebook_config.py' --NotebookApp.token='k5-mot'
     ports:
       - 8888:8888
     env_file:
@@ -608,13 +608,13 @@ services:
       - /srv/jupyterlab/workspace:/root/workspace
     networks:
       - network-reverse-proxy
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
 
 networks:
   network-reverse-proxy:
