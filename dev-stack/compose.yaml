@@ -591,27 +591,30 @@ services:
     networks:
       - network-prometheus
 
-  jupyterhub:
-    image: jupyterhub:localbuild
+  jupyterlab:
+    image: jupyterlab:localbuild
     build:
-      context: .
-      dockerfile: ./jupyter/Dockerfile
-      network: host
-    # dns:
-    #   - 8.8.8.8
-    container_name: homelab-jupyterhub
+      context: ./jupyterlab
+      dockerfile: ./Dockerfile
+    container_name: homelab-jupyterlab
     privileged: true
+    command:
+      jupyter-lab --ip 0.0.0.0 --allow-root -b localhost --NotebookApp.token='k5-mot'
     ports:
-      - 8000:8000
-      - 8001:8001
-    # env_file:
-    #   - ../base.env
+      - 8888:8888
+    env_file:
+      - ../base.env
     volumes:
-      - ./jupyter/jupyterhub_config.py:/etc/jupyterhub/jupyterhub_config.py:ro
-      - ./jupyter/add_user.sh:/etc/jupyterhub/add_user.sh:rx
+      - /srv/jupyterlab/workspace:/root/workspace
     networks:
       - network-reverse-proxy
-
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
 networks:
   network-reverse-proxy:
