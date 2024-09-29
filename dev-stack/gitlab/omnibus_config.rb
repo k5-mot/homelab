@@ -2,12 +2,13 @@
 # https://docs.gitlab.com/omnibus/settings/memory_constrained_envs.html
 # https://qiita.com/KO_YAmajun/items/1a511a3378a67358bb04
 # https://qiita.com/KO_YAmajun/items/b4e894f72697348e3beb
-roles ['monitoring_role']
+# roles ['monitoring_role']
 external_url 'http://192.168.11.2/gitlab'
+# external_url 'http://192.168.11.2:30080'
 # gitlab_rails['initial_root_password'] = 'root'
 gitlab_rails['time_zone'] = 'Tokyo'
 gitlab_rails['gitlab_shell_ssh_port'] = 30022
-
+postgresql['enable'] = true
 # [OPTION] HTTPS settings
 # nginx['listen_port'] = 80
 # nginx['listen_https'] = false
@@ -18,7 +19,7 @@ gitlab_rails['gitlab_shell_ssh_port'] = 30022
 # nginx['redirect_http_to_https_port'] = 80
 
 # [OPTION] GitLab Container Registry
-registry_external_url 'http://192.168.11.2:5000'
+# registry_external_url 'http://192.168.11.2:5000'
 # gitlab_rails['registry_enabled'] = true
 # gitlab_rails['registry_api_url'] = "http://localhost:5001"
 # registry['enable'] = true
@@ -33,7 +34,7 @@ registry_external_url 'http://192.168.11.2:5000'
 
 # [OPTION] Optimize Redis
 # https://docs.gitlab.com/omnibus/settings/memory_constrained_envs.html#optimize-sidekiq
-sidekiq['max_concurrency'] = 10
+# sidekiq['max_concurrency'] = 10
 
 # [OPTION] Optimize Gitaly
 # https://docs.gitlab.com/omnibus/settings/memory_constrained_envs.html#optimize-gitaly
@@ -64,19 +65,23 @@ gitaly['env'] = {
 
 # [OPTION] Disable monitoring by Prometheus/Grafana/Alertmanager
 # https://docs.gitlab.com/omnibus/settings/memory_constrained_envs.html#disable-monitoring
-prometheus_monitoring['enable'] = true
-prometheus['enable'] = true
-prometheus['listen_address'] = '0.0.0.0:9090'
+# prometheus_monitoring['enable'] = true
+prometheus_monitoring['enable'] = false
+# prometheus['enable'] = true
+prometheus['enable'] = false
+# prometheus['listen_address'] = '0.0.0.0:9090'
 prometheus['monitor_kubernetes'] = false
-gitlab_exporter['enable'] = true
+# gitlab_exporter['enable'] = true
 
 # Enable service discovery for Prometheus
-consul['enable'] = true
-consul['monitoring_service_discovery'] = true
-consul['configuration'] = {
-   retry_join: %w(10.0.0.1 10.0.0.2 10.0.0.3), # The addresses can be IPs or FQDNs
-}
-
+# consul['enable'] = true
+consul['enable'] = false
+# consul['monitoring_service_discovery'] = true
+# consul['configuration'] = {
+#    retry_join: %w(10.0.0.1 10.0.0.2 10.0.0.3), # The addresses can be IPs or FQDNs
+# }
+nginx['enable'] = true
+# nginx['enable'] = false
 grafana['enable'] = false
 
 alertmanager['enable'] = false

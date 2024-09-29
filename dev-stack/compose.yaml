@@ -18,7 +18,6 @@ services:
     networks:
       - network-reverse-proxy
 
-
   # https://hub.docker.com/r/osixia/openldap
   openldap:
     image: docker.io/osixia/openldap
@@ -72,19 +71,19 @@ services:
     container_name: homelab-gitlab
     restart: always
     shm_size: 256m
-    ports:
-      # - 30080:80
+    # ports:
+    #   - 30080:80
       # - 30443:443
-      - 30022:80
-      - 5000:5000
+    #   # - 30022:80
+    #   - 5000:5000
     env_file:
       - ../base.env
     environment:
       GITLAB_OMNIBUS_CONFIG: "from_file('/etc/gitlab/omnibus_config.rb')"
     volumes:
-      - /srv/gitlab/config:/etc/gitlab
-      - /srv/gitlab/logs:/var/log/gitlab
-      - /srv/gitlab/data:/var/opt/gitlab
+      - volume-gitlab-config:/etc/gitlab
+      - volume-gitlab-log:/var/log/gitlab
+      - volume-gitlab-data:/var/opt/gitlab
       - ./gitlab/omnibus_config.rb:/etc/gitlab/omnibus_config.rb
     networks:
       - network-reverse-proxy
@@ -666,3 +665,9 @@ volumes:
     name: homelab-volume-phpldapadmin
   volume-miniflux-db:
     name: homelab-volume-miniflux-db
+  volume-gitlab-config:
+    name: homelab-volume-gitlab-config
+  volume-gitlab-log:
+    name: homelab-volume-gitlab-log
+  volume-gitlab-data:
+    name: homelab-volume-gitlab-data
