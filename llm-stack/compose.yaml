@@ -2,25 +2,87 @@ name: homelab-llm-stack
 
 services:
 
- # https://github.com/ollama/ollama/blob/main/docs/docker.md
-  ollama:
-    image: docker.io/ollama/ollama:latest
-    container_name: homelab-ollama
-    restart: unless-stopped
+  nginx:
+    image: docker.io/nginx:1.27.1
+    container_name: homelab-nginx
+    restart: always
     ports:
-      - 30100:11434
+      - 80:80
+      - 443:443
     env_file:
       - ../base.env
-      - ../proxy.env
-    environment:
-      - http_proxy=
-      - HTTP_PROXY=
-      - OLLAMA_HOST=0.0.0.0
     volumes:
-      - ./ollama:/root/ollama
-      - volume-ollama:/root/.ollama
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
+      - network-reverse-proxy
+
+
+  # https://github.com/ollama/ollama/blob/main/docs/docker.md
+  ollama:
+    build:
+      context: ./ollama
+      dockerfile: ./Dockerfile
+    container_name: homelab-ollama
+    restart: unless-stopped
+    env_file:
+      - ../base.env
+    volumes:
+      - volume-ollama:/root/.ollama
+      - volume-ollama-build:/workspace
+    networks:
+      - network-reverse-proxy
       - network-ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+
+  # https://docs.gitlab.com/ee/install/docker.html
+  gitlab:
+    image: docker.io/gitlab/gitlab-ee:16.10.3-ee.0
+    container_name: homelab-gitlab
+    restart: always
+    shm_size: 256m
+    ports:
+      - 30022:80
+    env_file:
+      - ../base.env
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://localhost/gitlab'
+        gitlab_rails['time_zone'] = 'Tokyo'
+        gitlab_rails['gitlab_shell_ssh_port'] = 30022
+    volumes:
+      - /srv/gitlab/config:/etc/gitlab
+      - /srv/gitlab/logs:/var/log/gitlab
+      - /srv/gitlab/data:/var/opt/gitlab
+    networks:
+      - network-reverse-proxy
+
+  jupyterhub:
+    build:
+      context: ./jupyterhub
+      dockerfile: ./Dockerfile
+    container_name: homelab-jupyterhub
+    restart: unless-stopped
+    env_file:
+      - ../base.env
+    ports:
+      - 8000:8000
+    environment:
+    #   - GITLAB_URL=$GITLAB_URL
+      - GITLAB_HOST=$GITLAB_URL
+    #   - OAUTH_CALLBACK_URL=$OAUTH_CALLBACK_URL
+    #   - GITLAB_CLIENT_ID=$GITLAB_CLIENT_ID
+    #   - OAUTH_CLIENT_ID=$GITLAB_CLIENT_ID
+    #   - GITLAB_CLIENT_SECRET=$GITLAB_CLIENT_SECRET
+    #   - OAUTH_CLIENT_SECRET=$GITLAB_CLIENT_SECRET
+    networks:
+      - network-reverse-proxy
     deploy:
       resources:
         reservations:
@@ -72,14 +134,16 @@ services:
       - OLLAMA_BASE_URL=http://homelab-ollama:11434
       - OPENAI_API_BASE_URL=http://homelab-litellm:4000/v1;http://homelab-pipelines:9099
       - OPENAI_API_KEY=sk-litellm;0p3n-w3bu!
-      # - WEBUI_AUTH=False
+      - WEBUI_AUTH=False
     volumes:
       - volume-open-webui:/app/backend/data
       # - ./docs/:/app/backend/data/docs:ro
     networks:
+      - network-reverse-proxy
       - network-ollama
     depends_on:
       - ollama
+
 
   # nni:
   #   image: docker.io/msranni/nni:latest
@@ -165,8 +229,9 @@ services:
 
 
 networks:
-  # network-reverse-proxy:
-  #   external: true
+  network-reverse-proxy:
+    name: homelab-network-reverse-proxy
+    # external: true
   network-ollama:
     name: homelab-network-ollama
   network-langflow:
@@ -175,6 +240,8 @@ networks:
 volumes:
   volume-ollama:
     name: homelab-volume-ollama
+  volume-ollama-build:
+    name: homelab-volume-ollama-build
   volume-open-webui:
     name: homelab-volume-open-webui
   volume-pipelines:

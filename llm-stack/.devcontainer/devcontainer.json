@@ -1,0 +1,30 @@
+{
+    "name": "Python Development",
+    "dockerComposeFile": "../compose.yml",
+    "workspaceFolder": "/workspace",
+    "remoteUser": "vscode",
+    "service": "python3",
+    "forwardPorts": [
+        8000
+    ],
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.shell.linux": "/bin/bash"
+            },
+            "extensions": [
+                "ms-python.black-formatter", // Formatter
+                "ms-python.flake8", // Linter
+                "ms-python.isort", // Formatter for imports
+                "ms-toolsai.jupyter", // Jupyter Notebook
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-python.debugpy",
+                "ms-azuretools.vscode-docker",
+                "mhutchie.git-graph",
+                "codezombiech.gitignore",
+                "eamodio.gitlens"
+            ]
+        }
+    }
+}
