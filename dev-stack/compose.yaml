@@ -29,7 +29,6 @@ services:
       - ./nginx/public:/usr/share/nginx/html:rw
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
-      # - network-https
       - network-reverse-proxy
 
   # https://hub.docker.com/r/osixia/openldap
