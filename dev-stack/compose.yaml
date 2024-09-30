@@ -520,6 +520,10 @@ services:
       GF_PATHS_PROVISIONING: /etc/grafana/provisioning
       GF_USERS_DEFAULT_THEME: light
       DS_PROMETHEUS: homelab-prometheus
+      GF_AUTH_GITLAB_CLIENT_ID: ${GITLAB_CLIENT_ID}
+      GF_AUTH_GITLAB_CLIENT_SECRET: ${GITLAB_CLIENT_SECRET}
+      GF_AUTH_GITLAB_ENABLED: true
+      GF_AUTH_GITLAB_USE_REFRESH_TOKEN: true
     volumes:
       - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
       - ./grafana/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml
