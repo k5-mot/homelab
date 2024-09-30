@@ -43,12 +43,13 @@ services:
 
   # https://docs.gitlab.com/ee/install/docker.html
   gitlab:
-    image: docker.io/gitlab/gitlab-ee:16.10.3-ee.0
+    image: docker.io/gitlab/gitlab-ee:16.10.10-ee.0
+    # image: docker.io/gitlab/gitlab-ee:17.4.1-ee.0
     container_name: homelab-gitlab
     restart: always
     shm_size: 256m
     ports:
-      - 30022:80
+      - 30022:22
     env_file:
       - ../base.env
     environment:
@@ -71,16 +72,16 @@ services:
     restart: unless-stopped
     env_file:
       - ../base.env
-    ports:
-      - 8000:8000
+    # ports:
+    #   - 8000:8000
     environment:
     #   - GITLAB_URL=$GITLAB_URL
       - GITLAB_HOST=$GITLAB_URL
     #   - OAUTH_CALLBACK_URL=$OAUTH_CALLBACK_URL
-    #   - GITLAB_CLIENT_ID=$GITLAB_CLIENT_ID
+      - GITLAB_CLIENT_ID=$GITLAB_CLIENT_ID
     #   - OAUTH_CLIENT_ID=$GITLAB_CLIENT_ID
-    #   - GITLAB_CLIENT_SECRET=$GITLAB_CLIENT_SECRET
-    #   - OAUTH_CLIENT_SECRET=$GITLAB_CLIENT_SECRET
+      - GITLAB_CLIENT_SECRET=$GITLAB_CLIENT_SECRET
+      # - OAUTH_CLIENT_SECRET=$GITLAB_CLIENT_SECRET
     networks:
       - network-reverse-proxy
     deploy:
