@@ -509,6 +509,7 @@ services:
 
 
   # Initial Setup: username=admin, password=admin
+  # https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/gitlab/#configure-gitlab-authentication-client-using-the-grafana-configuration-file
   grafana:
     image: docker.io/grafana/grafana
     container_name: homelab-grafana
@@ -516,7 +517,8 @@ services:
     env_file:
       - ../base.env
     environment:
-      GF_SERVER_ROOT_URL: http://homelab-grafana:3000/grafana/
+      # GF_SERVER_ROOT_URL: http://homelab-grafana:3000/grafana/
+      GF_SERVER_ROOT_URL: http://192.168.11.2/grafana/
       GF_PATHS_PROVISIONING: /etc/grafana/provisioning
       GF_USERS_DEFAULT_THEME: light
       DS_PROMETHEUS: homelab-prometheus
@@ -524,6 +526,9 @@ services:
       GF_AUTH_GITLAB_CLIENT_SECRET: ${GITLAB_CLIENT_SECRET}
       GF_AUTH_GITLAB_ENABLED: true
       GF_AUTH_GITLAB_USE_REFRESH_TOKEN: true
+      GF_AUTH_GITLAB_AUTH_URL: ${GITLAB_HOST}/oauth/authorize
+      GF_AUTH_GITLAB_TOKEN_URL: ${GITLAB_HOST}/oauth/token
+      GF_AUTH_GITLAB_API_URL: ${GITLAB_HOST}/api/v4
     volumes:
       - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
       - ./grafana/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml
