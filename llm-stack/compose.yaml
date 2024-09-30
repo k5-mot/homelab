@@ -40,29 +40,28 @@ services:
               count: all
               capabilities: [gpu]
 
-
   # https://docs.gitlab.com/ee/install/docker.html
-  gitlab:
-    image: docker.io/gitlab/gitlab-ee:16.10.10-ee.0
-    # image: docker.io/gitlab/gitlab-ee:17.4.1-ee.0
-    container_name: homelab-gitlab
-    restart: always
-    shm_size: 256m
-    ports:
-      - 30022:22
-    env_file:
-      - ../base.env
-    environment:
-      GITLAB_OMNIBUS_CONFIG: |
-        external_url 'http://localhost/gitlab'
-        gitlab_rails['time_zone'] = 'Tokyo'
-        gitlab_rails['gitlab_shell_ssh_port'] = 30022
-    volumes:
-      - /srv/gitlab/config:/etc/gitlab
-      - /srv/gitlab/logs:/var/log/gitlab
-      - /srv/gitlab/data:/var/opt/gitlab
-    networks:
-      - network-reverse-proxy
+  # gitlab:
+  #   image: docker.io/gitlab/gitlab-ee:16.10.10-ee.0
+  #   # image: docker.io/gitlab/gitlab-ee:17.4.1-ee.0
+  #   container_name: homelab-gitlab
+  #   restart: always
+  #   shm_size: 256m
+  #   ports:
+  #     - 30022:22
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     GITLAB_OMNIBUS_CONFIG: |
+  #       external_url 'http://localhost/gitlab'
+  #       gitlab_rails['time_zone'] = 'Tokyo'
+  #       gitlab_rails['gitlab_shell_ssh_port'] = 30022
+  #   volumes:
+  #     - /srv/gitlab/config:/etc/gitlab
+  #     - /srv/gitlab/logs:/var/log/gitlab
+  #     - /srv/gitlab/data:/var/opt/gitlab
+  #   networks:
+  #     - network-reverse-proxy
 
   jupyterhub:
     build:
@@ -72,16 +71,11 @@ services:
     restart: unless-stopped
     env_file:
       - ../base.env
-    # ports:
-    #   - 8000:8000
     environment:
-    #   - GITLAB_URL=$GITLAB_URL
-      - GITLAB_HOST=$GITLAB_URL
-    #   - OAUTH_CALLBACK_URL=$OAUTH_CALLBACK_URL
-      - GITLAB_CLIENT_ID=$GITLAB_CLIENT_ID
-    #   - OAUTH_CLIENT_ID=$GITLAB_CLIENT_ID
-      - GITLAB_CLIENT_SECRET=$GITLAB_CLIENT_SECRET
-      # - OAUTH_CLIENT_SECRET=$GITLAB_CLIENT_SECRET
+      - GITLAB_HOST=${GITLAB_HOST}
+      - OAUTH_CALLBACK_URL=${OAUTH_CALLBACK_URL}
+      - GITLAB_CLIENT_ID=${GITLAB_CLIENT_ID}
+      - GITLAB_CLIENT_SECRET=${GITLAB_CLIENT_SECRET}
     networks:
       - network-reverse-proxy
     deploy:
