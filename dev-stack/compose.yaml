@@ -3,65 +3,65 @@ name: homelab-dev-stack
 
 services:
 
-  https-portal:
-    image: steveltn/https-portal:1
-    container_name: homelab-https-portal
-    ports:
-      - 80:80
-      - 443:443
-    environment:
-      DOMAINS: "localhost -> http://homelab-nginx:80"
-      STAGE: "local"
-    restart: always
-    networks:
-      - network-https
+  # https-portal:
+  #   image: steveltn/https-portal:1
+  #   container_name: homelab-https-portal
+  #   ports:
+  #     - 80:80
+  #     - 443:443
+  #   environment:
+  #     DOMAINS: "192.168.11.2 -> http://homelab-nginx:80"
+  #     STAGE: "local"
+  #   restart: always
+  #   networks:
+  #     - network-https
 
   nginx:
     image: docker.io/nginx:1.27.0
     container_name: homelab-nginx
     restart: always
-    # ports:
-    #   - 80:80
-    #   - 443:443
+    ports:
+      - 80:80
+      - 443:443
     env_file:
       - ../base.env
     volumes:
       - ./nginx/public:/usr/share/nginx/html:rw
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
-      - network-https
+      # - network-https
       - network-reverse-proxy
 
   # https://hub.docker.com/r/osixia/openldap
-  openldap:
-    image: docker.io/osixia/openldap
-    container_name: homelab-openldap
-    env_file:
-      - ../base.env
-    environment:
-      LDAP_ORGANISATION: "OpenLDAP"
-      LDAP_DOMAIN: "openldap.com"
-      LDAP_ADMIN_PASSWORD: "admin"
-    networks:
-      - network-reverse-proxy
+  # openldap:
+  #   image: docker.io/osixia/openldap
+  #   container_name: homelab-openldap
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     LDAP_ORGANISATION: "OpenLDAP"
+  #     LDAP_DOMAIN: "openldap.com"
+  #     LDAP_ADMIN_PASSWORD: "admin"
+  #   networks:
+  #     - network-reverse-proxy
 
-  # https://hub.docker.com/r/osixia/phpldapadmin
-  #   Login DN: "cn=admin,dc=openldap,dc=com"
-  #   Password: "admin"
-  phpldapadmin:
-    image: docker.io/osixia/phpldapadmin
-    container_name: homelab-phpldapadmin
-    env_file:
-      - ../base.env
-    environment:
-      PHPLDAPADMIN_LDAP_HOSTS: openldap
-      PHPLDAPADMIN_HTTPS: false
-    volumes:
-      - volume-phpldapadmin:/var/www/phpldapadmin
-    networks:
-      - network-reverse-proxy
-    depends_on:
-      - openldap
+  # # https://hub.docker.com/r/osixia/phpldapadmin
+  # #   Login DN: "cn=admin,dc=openldap,dc=com"
+  # #   Password: "admin"
+  # phpldapadmin:
+  #   image: docker.io/osixia/phpldapadmin
+  #   container_name: homelab-phpldapadmin
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     PHPLDAPADMIN_LDAP_HOSTS: openldap
+  #     PHPLDAPADMIN_HTTPS: false
+  #   volumes:
+  #     - volume-phpldapadmin:/var/www/phpldapadmin
+  #   networks:
+  #     - network-reverse-proxy
+  #   depends_on:
+  #     - openldap
 
 
   # https://docs.portainer.io/start/install-ce/server/docker/linux
@@ -613,34 +613,9 @@ services:
     networks:
       - network-prometheus
 
-  jupyterlab:
-    image: jupyterlab:localbuild
-    build:
-      context: ./jupyterlab
-      dockerfile: ./Dockerfile
-    container_name: homelab-jupyterlab
-    privileged: true
-    command:
-      jupyter-lab --ip 0.0.0.0 --allow-root -b localhost --config='/root/workspace/jupyter_notebook_config.py' --NotebookApp.token='k5-mot'
-    ports:
-      - 8888:8888
-    env_file:
-      - ../base.env
-    volumes:
-      - /srv/jupyterlab/workspace:/root/workspace
-    networks:
-      - network-reverse-proxy
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [gpu]
-
 networks:
-  network-https:
-    name: homelab-network-https
+  # network-https:
+  #   name: homelab-network-https
   network-reverse-proxy:
     name: homelab-network-reverse-proxy
     driver: bridge
