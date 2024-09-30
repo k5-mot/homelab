@@ -4,3 +4,8 @@ datasources:
     url: http://prometheus:9090
     access: proxy
     isDefault: true
+  - name: gitlab
+    type: prometheus
+    url: http://homelab-gitlab:9090
+    access: proxy
+    isDefault: true

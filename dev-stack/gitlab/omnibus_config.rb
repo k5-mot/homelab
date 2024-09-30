@@ -65,26 +65,26 @@ gitaly['env'] = {
 
 # [OPTION] Disable monitoring by Prometheus/Grafana/Alertmanager
 # https://docs.gitlab.com/omnibus/settings/memory_constrained_envs.html#disable-monitoring
-# prometheus_monitoring['enable'] = true
-prometheus_monitoring['enable'] = false
-# prometheus['enable'] = true
-prometheus['enable'] = false
-# prometheus['listen_address'] = '0.0.0.0:9090'
-prometheus['monitor_kubernetes'] = false
+prometheus_monitoring['enable'] = true
+# prometheus_monitoring['enable'] = false
+prometheus['enable'] = true
+# prometheus['enable'] = false
+prometheus['listen_address'] = '0.0.0.0:9090'
+# prometheus['monitor_kubernetes'] = false
 # gitlab_exporter['enable'] = true
 
 # Enable service discovery for Prometheus
 # consul['enable'] = true
-consul['enable'] = false
+# consul['enable'] = false
 # consul['monitoring_service_discovery'] = true
 # consul['configuration'] = {
 #    retry_join: %w(10.0.0.1 10.0.0.2 10.0.0.3), # The addresses can be IPs or FQDNs
 # }
-nginx['enable'] = true
+# nginx['enable'] = true
 # nginx['enable'] = false
 grafana['enable'] = false
 
-alertmanager['enable'] = false
+# alertmanager['enable'] = false
 
 # [OPTION] Configure how GitLab handles memory
 # https://docs.gitlab.com/omnibus/settings/memory_constrained_envs.html#configure-how-gitlab-handles-memory

@@ -18,8 +18,10 @@ scrape_configs:
   - job_name: 'prometheus'
     static_configs:
       - targets:
-        - homelab-prometheus:9090
         - homelab-node-exporter:9100
         - homelab-cadvisor:8080
         - homelab-nginx-exporter:9113
+  - job_name: 'gitlab'
+    static_configs:
+      - targets:
         - homelab-gitlab:9090

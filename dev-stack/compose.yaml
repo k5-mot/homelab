@@ -179,7 +179,7 @@ services:
     networks:
       - network-jenkins
 
-
+  # ID:admin PW:admin
   redmine:
     image: redmine:revpro
     build:

@@ -17,3 +17,8 @@ providers:
   type: file
   options:
     path: /var/lib/grafana/dashboards/nginx.json
+
+- name: GitLab Overview
+  type: file
+  options:
+    path: /var/lib/grafana/dashboards/gitlab.json
