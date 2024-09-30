@@ -16,7 +16,6 @@ services:
     networks:
       - network-reverse-proxy
 
-
   # https://github.com/ollama/ollama/blob/main/docs/docker.md
   ollama:
     build:

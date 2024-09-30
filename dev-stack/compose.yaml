@@ -3,19 +3,33 @@ name: homelab-dev-stack
 
 services:
 
+  https-portal:
+    image: steveltn/https-portal:1
+    container_name: homelab-https-portal
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      DOMAINS: "localhost -> http://homelab-nginx:80"
+      STAGE: "local"
+    restart: always
+    networks:
+      - network-https
+
   nginx:
     image: docker.io/nginx:1.27.0
     container_name: homelab-nginx
     restart: always
-    ports:
-      - 80:80
-      - 443:443
+    # ports:
+    #   - 80:80
+    #   - 443:443
     env_file:
       - ../base.env
     volumes:
       - ./nginx/public:/usr/share/nginx/html:rw
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
+      - network-https
       - network-reverse-proxy
 
   # https://hub.docker.com/r/osixia/openldap
@@ -625,6 +639,8 @@ services:
     #           capabilities: [gpu]
 
 networks:
+  network-https:
+    name: homelab-network-https
   network-reverse-proxy:
     name: homelab-network-reverse-proxy
     driver: bridge
