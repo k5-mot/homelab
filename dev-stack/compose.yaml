@@ -194,56 +194,56 @@ services:
       - network-jenkins
 
   # ID:admin PW:admin
-  redmine:
-    image: redmine:revpro
-    build:
-      context: .
-      dockerfile: ./redmine/Dockerfile
-    container_name: homelab-redmine
-    env_file:
-      - ../base.env
-    environment:
-      REDMINE_DB_POSTGRES: homelab-redmine-db
-      REDMINE_DB_DATABASE: redmine
-      REDMINE_DB_USERNAME: redmine_user
-      REDMINE_DB_PASSWORD: redmine_pass
-      REDMINE_SECRET_KEY_BASE: supersecretkey
-      REDMINE_DB_PORT: 5432
-    volumes:
-      - volume-redmine:/usr/src/redmine/files
-    networks:
-      - network-reverse-proxy
-      - network-redmine
-    depends_on:
-      redmine-db:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/redmine/"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
+  # redmine:
+  #   image: redmine:revpro
+  #   build:
+  #     context: .
+  #     dockerfile: ./redmine/Dockerfile
+  #   container_name: homelab-redmine
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     REDMINE_DB_POSTGRES: homelab-redmine-db
+  #     REDMINE_DB_DATABASE: redmine
+  #     REDMINE_DB_USERNAME: redmine_user
+  #     REDMINE_DB_PASSWORD: redmine_pass
+  #     REDMINE_SECRET_KEY_BASE: supersecretkey
+  #     REDMINE_DB_PORT: 5432
+  #   volumes:
+  #     - volume-redmine:/usr/src/redmine/files
+  #   networks:
+  #     - network-reverse-proxy
+  #     - network-redmine
+  #   depends_on:
+  #     redmine-db:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:3000/redmine/"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #     start_period: 40s
 
 
-  redmine-db:
-    image: docker.io/postgres:16.3
-    container_name: homelab-redmine-db
-    env_file:
-      - ../base.env
-    environment:
-      POSTGRES_DB:       redmine
-      POSTGRES_USER:     redmine_user
-      POSTGRES_PASSWORD: redmine_pass
-    volumes:
-      - volume-redmine-db:/var/lib/postgresql/data
-    networks:
-      - network-redmine
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 5s
+  # redmine-db:
+  #   image: docker.io/postgres:16.3
+  #   container_name: homelab-redmine-db
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     POSTGRES_DB:       redmine
+  #     POSTGRES_USER:     redmine_user
+  #     POSTGRES_PASSWORD: redmine_pass
+  #   volumes:
+  #     - volume-redmine-db:/var/lib/postgresql/data
+  #   networks:
+  #     - network-redmine
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1"]
+  #     interval: 10s
+  #     timeout: 10s
+  #     retries: 5
+  #     start_period: 5s
 
   # https://gethomepage.dev/latest/configs/docker/#using-docker-socket-proxy
   dockerproxy:
@@ -366,91 +366,91 @@ services:
       start_period: 5s
 
 
-  nextcloud:
-    image: docker.io/nextcloud
-    container_name: homelab-nextcloud
-    restart: always
-    env_file:
-      - ../base.env
-    environment:
-      - MYSQL_HOST=nextcloud-db
-      - MYSQL_DATABASE=nextcloud
-      - MYSQL_USER=nextcloud_user
-      - MYSQL_PASSWORD=nextcloud_password
-    volumes:
-      - /srv/nextcloud:/var/www/html
-      - ./nextcloud/setup.sh:/root/setup.sh
-    networks:
-      - network-reverse-proxy
-      - network-nextcloud
-    depends_on:
-      - nextcloud-db
+  # nextcloud:
+  #   image: docker.io/nextcloud
+  #   container_name: homelab-nextcloud
+  #   restart: always
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     - MYSQL_HOST=nextcloud-db
+  #     - MYSQL_DATABASE=nextcloud
+  #     - MYSQL_USER=nextcloud_user
+  #     - MYSQL_PASSWORD=nextcloud_password
+  #   volumes:
+  #     - /srv/nextcloud:/var/www/html
+  #     - ./nextcloud/setup.sh:/root/setup.sh
+  #   networks:
+  #     - network-reverse-proxy
+  #     - network-nextcloud
+  #   depends_on:
+  #     - nextcloud-db
 
-  # https://mariadb.org/mariadb-server-docker-official-images-healthcheck-without-mysqladmin/
-  nextcloud-db:
-    image: docker.io/mariadb
-    container_name: homelab-nextcloud-db
-    restart: always
-    env_file:
-      - ../base.env
-    environment:
-      - MARIADB_DATABASE=nextcloud
-      - MARIADB_ROOT_PASSWORD=nextcloud_root_pw
-      - MARIADB_USER=nextcloud_user
-      - MARIADB_PASSWORD=nextcloud_password
-    volumes:
-      - /srv/nextcloud-db:/var/lib/mysql
-    networks:
-      - network-nextcloud
-    healthcheck:
-      test: [ "CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized" ]
-      start_period: 1m
-      start_interval: 10s
-      interval: 1m
-      timeout: 5s
-      retries: 3
+  # # https://mariadb.org/mariadb-server-docker-official-images-healthcheck-without-mysqladmin/
+  # nextcloud-db:
+  #   image: docker.io/mariadb
+  #   container_name: homelab-nextcloud-db
+  #   restart: always
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     - MARIADB_DATABASE=nextcloud
+  #     - MARIADB_ROOT_PASSWORD=nextcloud_root_pw
+  #     - MARIADB_USER=nextcloud_user
+  #     - MARIADB_PASSWORD=nextcloud_password
+  #   volumes:
+  #     - /srv/nextcloud-db:/var/lib/mysql
+  #   networks:
+  #     - network-nextcloud
+  #   healthcheck:
+  #     test: [ "CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized" ]
+  #     start_period: 1m
+  #     start_interval: 10s
+  #     interval: 1m
+  #     timeout: 5s
+  #     retries: 3
 
 
   # https://miniflux.app/docs/docker.html
   # https://miniflux.app/docs/howto.html#reverse-proxy-subfolder
-  miniflux:
-    image: miniflux/miniflux:latest
-    container_name: homelab-miniflux
-    env_file:
-      - ../base.env
-    environment:
-      - DATABASE_URL=postgres://miniflux_user:miniflux_pass@miniflux-db/miniflux_base?sslmode=disable
-      - RUN_MIGRATIONS=1
-      - CREATE_ADMIN=1
-      - ADMIN_USERNAME=admin
-      - ADMIN_PASSWORD=admin
-      - BASE_URL=http://192.168.11.2/miniflux/
-    networks:
-      - network-reverse-proxy
-      - network-miniflux
-    depends_on:
-      miniflux-db:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "/usr/bin/miniflux", "-healthcheck", "auto"]
+  # miniflux:
+  #   image: miniflux/miniflux:latest
+  #   container_name: homelab-miniflux
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     - DATABASE_URL=postgres://miniflux_user:miniflux_pass@miniflux-db/miniflux_base?sslmode=disable
+  #     - RUN_MIGRATIONS=1
+  #     - CREATE_ADMIN=1
+  #     - ADMIN_USERNAME=admin
+  #     - ADMIN_PASSWORD=admin
+  #     - BASE_URL=http://192.168.11.2/miniflux/
+  #   networks:
+  #     - network-reverse-proxy
+  #     - network-miniflux
+  #   depends_on:
+  #     miniflux-db:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: ["CMD", "/usr/bin/miniflux", "-healthcheck", "auto"]
 
-  miniflux-db:
-    image: postgres:15
-    container_name: homelab-miniflux-db
-    env_file:
-      - ../base.env
-    environment:
-      - POSTGRES_USER=miniflux_user
-      - POSTGRES_PASSWORD=miniflux_pass
-      - POSTGRES_DB=miniflux_base
-    volumes:
-      - volume-miniflux-db:/var/lib/postgresql/data
-    networks:
-      - network-miniflux
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "miniflux_user"]
-      interval: 10s
-      start_period: 30s
+  # miniflux-db:
+  #   image: postgres:15
+  #   container_name: homelab-miniflux-db
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     - POSTGRES_USER=miniflux_user
+  #     - POSTGRES_PASSWORD=miniflux_pass
+  #     - POSTGRES_DB=miniflux_base
+  #   volumes:
+  #     - volume-miniflux-db:/var/lib/postgresql/data
+  #   networks:
+  #     - network-miniflux
+  #   healthcheck:
+  #     test: ["CMD", "pg_isready", "-U", "miniflux_user"]
+  #     interval: 10s
+  #     start_period: 30s
 
 
   # # https://doc.wallabag.org/en/admin/installation/installation.html#installation-with-docker
