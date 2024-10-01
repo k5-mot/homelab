@@ -21,69 +21,49 @@ sudo docker exec -it homelab-gitlab-runner /bin/bash -c "cat /etc/gitlab-runner/
 # sudo cp ./cockpit/cockpit.conf /etc/cockpit/cockpit.conf && sudo systemctl restart cockpit
 ```
 
-```plantuml
-Bob -> Alice : hello
-Alice -> Bob : hi
-```
+## Portainer with GitLab OAuth
 
-```plantuml
-@startuml
-GitLab -> Kroki: Request rendering
-Kroki -> PlantUML: Request rendering
-PlantUML -> Kroki: Image
-Kroki -> GitLab: Images
-@enduml
-```
+### GitLab側の操作
 
-```plantuml
-@startuml
-!include C4_Context.puml
+1. "Admin area"を開く
+2. "Settings" - "Application"を開く
+3. 以下を入力し、保存する
+    - Scopes:
+        - read_user
+        - read_api
+        - openid
+        - profile
+        - email
+    - Trusted applicat5ino
 
-title System Context diagram for Internet Banking System
+- 参考資料
+    - [Create an instance-wide application | GitLab Docs](https://docs.gitlab.com/ee/integration/oauth_provider.html#create-an-instance-wide-application)
 
-Person(customer, "Banking Customer", "A customer of the bank, with personal bank accounts.")
-System(banking_system, "Internet Banking System", "Allows customers to check their accounts.")
+### Portainer側の操作
 
-System_Ext(mail_system, "E-mail system", "The internal Microsoft Exchange e-mail system.")
-System_Ext(mainframe, "Mainframe Banking System", "Stores all of the core banking information.")
+1. "Settings" - "Authentication"を開く
+2. "Authentication settings"で、以下を入力し保存する
+    - Configuration:
+        - Session lifetime: "1 hour"
+    - Authentication method: "OAuth"
+    - Single Sign-On:
+        - Use SSO: "ON"
+    - Automatic user provisioning
+        - Automatic user provisioning: "ON"
+    - OAuth Configuration
+        - Client ID: "<GitLab ApplicationのClient ID>"
+        - Client Secret: "<GitLab ApplicationのSecret>"
+        - Authorization URL: "<GitLab URL>/oauth/authorize"
+        - Access token URL: "<GitLab URL>/oauth/token"
+        - Resource URL: "<GitLab URL>/api/v4/user"
+        - Redirect URL: "<Portainer URL>"
+        - Logout URL: ""
+        - User identifier: "username"
+        - Scopes: "read_user"
+    - Actions
+        - "Save settings"
+3. ログアウトして、サインイン画面に戻ると"Login With OAuth"ボタンが増えている
+![Portainer OAuth](../doc/img/Portainer_GitLab_OAuth_Login.png)
 
-Rel(customer, banking_system, "Uses")
-Rel_Back(customer, mail_system, "Sends e-mails to")
-Rel_Neighbor(banking_system, mail_system, "Sends e-mails", "SMTP")
-Rel(banking_system, mainframe, "Uses")
-@enduml
-```
-
-```plantuml
-digraph finite_state_machine {
-	rankdir=LR;
-	size="8,5"
-	node [shape = doublecircle]; LR_0 LR_3 LR_4 LR_8;
-	node [shape = circle];
-	LR_0 -> LR_2 [ label = "SS(B)" ];
-	LR_0 -> LR_1 [ label = "SS(S)" ];
-	LR_1 -> LR_3 [ label = "S($end)" ];
-	LR_2 -> LR_6 [ label = "SS(b)" ];
-	LR_2 -> LR_5 [ label = "SS(a)" ];
-	LR_2 -> LR_4 [ label = "S(A)" ];
-	LR_5 -> LR_7 [ label = "S(b)" ];
-	LR_5 -> LR_5 [ label = "S(a)" ];
-	LR_6 -> LR_6 [ label = "S(b)" ];
-	LR_6 -> LR_5 [ label = "S(a)" ];
-	LR_7 -> LR_8 [ label = "S(b)" ];
-	LR_7 -> LR_5 [ label = "S(a)" ];
-	LR_8 -> LR_6 [ label = "S(b)" ];
-	LR_8 -> LR_5 [ label = "S(a)" ];
-}
-
-```
-
-### Mermaid
-
-```mermaid
-sequenceDiagram
-GitLab->>Kroki: Request rendering
-Kroki->>Mermaid: Request rendering
-Mermaid-->>Kroki: Image
-Kroki-->>GitLab: Image
-```
+- 参考資料
+    - [Using oAuth with Gitlab #6117 | GitHub Issues](https://github.com/portainer/portainer/issues/6117)

@@ -65,10 +65,13 @@ services:
 
 
   # https://docs.portainer.io/start/install-ce/server/docker/linux
+  # https://github.com/portainer/portainer/issues/6117
   portainer:
     image: docker.io/portainer/portainer-ce:2.20.3
     container_name: homelab-portainer
     restart: always
+    ports:
+      - 9443:9443
     privileged: true
     env_file:
       - ../base.env
