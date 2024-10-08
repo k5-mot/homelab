@@ -39,28 +39,54 @@ services:
               count: all
               capabilities: [gpu]
 
+  crontab:
+    build:
+      context: ./crontab
+      dockerfile: ./Dockerfile
+    container_name: homelab-crontab
+    restart: always
+    env_file:
+      - ../base.env
+    networks:
+      - network-reverse-proxy
+
+  chroma:
+    image: chromadb/chroma:0.5.11
+    container_name: homelab-chroma
+    restart: always
+    ports:
+      - 8000:8000
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma # this is the default path, change it as needed
+      - ANONYMIZED_TELEMETRY=FALSE
+    volumes:
+      - volume-chroma:/chroma/chroma
+    networks:
+      - network-reverse-proxy
+
   # https://docs.gitlab.com/ee/install/docker.html
-  # gitlab:
-  #   image: docker.io/gitlab/gitlab-ee:16.10.10-ee.0
-  #   # image: docker.io/gitlab/gitlab-ee:17.4.1-ee.0
-  #   container_name: homelab-gitlab
-  #   restart: always
-  #   shm_size: 256m
-  #   ports:
-  #     - 30022:22
-  #   env_file:
-  #     - ../base.env
-  #   environment:
-  #     GITLAB_OMNIBUS_CONFIG: |
-  #       external_url 'http://localhost/gitlab'
-  #       gitlab_rails['time_zone'] = 'Tokyo'
-  #       gitlab_rails['gitlab_shell_ssh_port'] = 30022
-  #   volumes:
-  #     - /srv/gitlab/config:/etc/gitlab
-  #     - /srv/gitlab/logs:/var/log/gitlab
-  #     - /srv/gitlab/data:/var/opt/gitlab
-  #   networks:
-  #     - network-reverse-proxy
+  gitlab:
+    image: docker.io/gitlab/gitlab-ee:16.10.10-ee.0
+    # image: docker.io/gitlab/gitlab-ee:17.4.1-ee.0
+    container_name: homelab-gitlab
+    restart: always
+    shm_size: 256m
+    ports:
+      - 30022:22
+    env_file:
+      - ../base.env
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://localhost/gitlab'
+        gitlab_rails['time_zone'] = 'Tokyo'
+        gitlab_rails['gitlab_shell_ssh_port'] = 30022
+    volumes:
+      - /srv/gitlab/config:/etc/gitlab
+      - /srv/gitlab/logs:/var/log/gitlab
+      - /srv/gitlab/data:/var/opt/gitlab
+    networks:
+      - network-reverse-proxy
 
   jupyterhub:
     build:
@@ -88,57 +114,57 @@ services:
               capabilities: [gpu]
 
   # https://github.com/BerriAI/litellm
-  litellm:
-    image: ghcr.io/berriai/litellm:main-latest
-    container_name: homelab-litellm
-    restart: unless-stopped
-    command: [ "--config", "/app/config.yaml", "--port", "4000" ]
-    env_file:
-      - ../base.env
-      - .env
-    environment:
-      - MASTER_KEY=sk-litellm
-    volumes:
-      - ./litellm/config.yaml:/app/config.yaml
-    networks:
-      - network-ollama
+  # litellm:
+  #   image: ghcr.io/berriai/litellm:main-latest
+  #   container_name: homelab-litellm
+  #   restart: unless-stopped
+  #   command: [ "--config", "/app/config.yaml", "--port", "4000" ]
+  #   env_file:
+  #     - ../base.env
+  #     - .env
+  #   environment:
+  #     - MASTER_KEY=sk-litellm
+  #   volumes:
+  #     - ./litellm/config.yaml:/app/config.yaml
+  #   networks:
+  #     - network-ollama
 
   # https://github.com/open-webui/pipelines
-  pipelines:
-    image: ghcr.io/open-webui/pipelines:main
-    container_name: homelab-pipelines
-    restart: always
-    env_file:
-      - ../base.env
-    volumes:
-      - volume-pipelines:/app/pipelines
-    networks:
-      - network-ollama
+  # pipelines:
+  #   image: ghcr.io/open-webui/pipelines:main
+  #   container_name: homelab-pipelines
+  #   restart: always
+  #   env_file:
+  #     - ../base.env
+  #   volumes:
+  #     - volume-pipelines:/app/pipelines
+  #   networks:
+  #     - network-ollama
 
 
   # https://docs.openwebui.com/getting-started/#docker-compose
-  open-webui:
-    image: ghcr.io/open-webui/open-webui:main
-    container_name: homelab-open-webui
-    restart: unless-stopped
-    ports:
-      - 30110:8080
-    env_file:
-      - ../base.env
-      - .env
-    environment:
-      - OLLAMA_BASE_URL=http://homelab-ollama:11434
-      - OPENAI_API_BASE_URL=http://homelab-litellm:4000/v1;http://homelab-pipelines:9099
-      - OPENAI_API_KEY=sk-litellm;0p3n-w3bu!
-      - WEBUI_AUTH=False
-    volumes:
-      - volume-open-webui:/app/backend/data
-      # - ./docs/:/app/backend/data/docs:ro
-    networks:
-      - network-reverse-proxy
-      - network-ollama
-    depends_on:
-      - ollama
+  # open-webui:
+  #   image: ghcr.io/open-webui/open-webui:main
+  #   container_name: homelab-open-webui
+  #   restart: unless-stopped
+  #   ports:
+  #     - 30110:8080
+  #   env_file:
+  #     - ../base.env
+  #     - .env
+  #   environment:
+  #     - OLLAMA_BASE_URL=http://homelab-ollama:11434
+  #     - OPENAI_API_BASE_URL=http://homelab-litellm:4000/v1;http://homelab-pipelines:9099
+  #     - OPENAI_API_KEY=sk-litellm;0p3n-w3bu!
+  #     - WEBUI_AUTH=False
+  #   volumes:
+  #     - volume-open-webui:/app/backend/data
+  #     # - ./docs/:/app/backend/data/docs:ro
+  #   networks:
+  #     - network-reverse-proxy
+  #     - network-ollama
+  #   depends_on:
+  #     - ollama
 
 
   # nni:
@@ -246,3 +272,5 @@ volumes:
     name: homelab-volume-langflow
   volume-langflow-db:
     name: homelab-volume-langflow-db
+  volume-chroma:
+    name: homelab-volume-chroma
