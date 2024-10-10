@@ -37,7 +37,7 @@ services:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
   crontab:
     build:
@@ -47,6 +47,9 @@ services:
     restart: always
     env_file:
       - ../base.env
+    volumes:
+      - ./crontab:/workspace
+      # - ./docs/:/workspace/docs
     networks:
       - network-reverse-proxy
 
@@ -111,7 +114,7 @@ services:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
   # https://github.com/BerriAI/litellm
   # litellm:
@@ -176,18 +179,17 @@ services:
   #     - .env
 
   # https://github.com/Unstructured-IO/unstructured-api
-  unstructured:
-    image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
-    container_name: homelab-unstructured
-    restart: always
-    ports:
-      - 30412:8000
-    environment:
-      - UNSTRUCTURED_API_KEY="unstructured"
-    env_file:
-      - ../base.env
-      - .env
-
+  # unstructured:
+  #   image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
+  #   container_name: homelab-unstructured
+  #   restart: always
+  #   ports:
+  #     - 30412:8000
+  #   environment:
+  #     - UNSTRUCTURED_API_KEY="unstructured"
+  #   env_file:
+  #     - ../base.env
+  #     - .env
   # # https://docs.langflow.org/deployment-docker
   # langflow:
   #   image: docker.io/langflowai/langflow:latest
