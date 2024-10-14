@@ -71,6 +71,8 @@ services:
       dockerfile: ./Dockerfile
     container_name: homelab-chainlit
     restart: always
+    ports:
+      - 8000:8000
     env_file:
       - ../base.env
     volumes:
@@ -82,8 +84,8 @@ services:
     image: chromadb/chroma:0.5.11
     container_name: homelab-chroma
     restart: always
-    # ports:
-    #   - 8000:8000
+    ports:
+      - 8001:8000
     environment:
       - IS_PERSISTENT=TRUE
       - PERSIST_DIRECTORY=/chroma/chroma # this is the default path, change it as needed
@@ -98,8 +100,8 @@ services:
     container_name: homelab-elasticsearch
     restart: always
     shm_size: 1g
-    # ports:
-    #   - 9200:9200
+    ports:
+      - 9200:9200
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false

@@ -5,7 +5,7 @@ import re
 import shutil
 import statistics
 import sys
-from typing import List
+from typing import List, Dict
 
 import chainlit as cl
 import chromadb
@@ -17,7 +17,7 @@ from langchain.prompts import (
 from langchain.retrievers import ContextualCompressionRetriever, EnsembleRetriever
 from langchain.schema import StrOutputParser
 from langchain_core.documents import Document
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough, Runnable
 from langchain_community.document_compressors import FlashrankRerank
 from langchain_anthropic import ChatAnthropic
 from langchain_ollama.chat_models import ChatOllama
@@ -43,6 +43,11 @@ OLLAMA_API_URL = "http://homelab-ollama:11434"
 CHROMA_API_URL = "http://homelab-chroma:8000"
 ELASTICSEARCH_API_URL = "http://homelab-elasticsearch:9200"
 
+client_chroma = chromadb.HttpClient(
+    host=CHROMA_API_URL,
+    settings=chromadb.config.Settings(anonymized_telemetry=False),
+)
+
 # Prompt
 system_prompt = SystemMessagePromptTemplate.from_template(SYSTEM_TEMPLATE)
 human_prompt = HumanMessagePromptTemplate.from_template(HUMAN_TEMPLATE)
@@ -59,80 +64,101 @@ parser = StrOutputParser()
 # Embedding model
 embeddings = OllamaEmbeddings(base_url=OLLAMA_API_URL, model="nomic-embed-text:latest")
 
-# Vector store
-client_chroma = chromadb.HttpClient(
-    host=CHROMA_API_URL,
-    settings=chromadb.config.Settings(anonymized_telemetry=False),
-)
-dense_vectorstore = Chroma(
-    collection_name="sample",
-    embedding_function=embeddings,
-    client=client_chroma,
-)
-
-# Vector store
-sparse_vectorstore = ElasticsearchStore(
-    index_name="sample",
-    embedding=embeddings,
-    es_url=ELASTICSEARCH_API_URL,
-    strategy=ElasticsearchStore.BM25RetrievalStrategy(),
-)
-
-# Dense Retriever
-dense_retriever = dense_vectorstore.as_retriever(search_kwargs={"k": 5})
-
-# Sparse Retriever
-sparse_retriever = sparse_vectorstore.as_retriever(search_kwargs={"k": 5})
-
-# Ensemble Retriever
-ensemble_retriever = EnsembleRetriever(
-    retrievers=[dense_retriever, sparse_retriever], weights=[0.5, 0.5]
-)
-
-# Reranker
-compressor = FlashrankRerank(score_threshold=0.90, top_n=2)
-compression_retriever = ContextualCompressionRetriever(
-    base_compressor=compressor, base_retriever=ensemble_retriever
-)
-
-# RAG chain
-rag_chain = (
-    RunnablePassthrough(context=(lambda x: format_docs(x["context"])))
-    | prompt
-    | model
-    | parser
-)
-
-# Rerank RAG chain
-runnable = RunnableParallel(
-    {"context": compression_retriever, "question": RunnablePassthrough()}
-).assign(answer=rag_chain)
+profiles_fileinfo = []
 
 
 @cl.set_chat_profiles
-async def set_chat_profiles():
+async def chat_profiles(current_user: cl.User):
     profiles = []
     for rootdir in glob.glob("/docs/*/"):
+        basedir = re.sub("/$", "", rootdir)
+        basedir = os.path.basename(basedir)
+        name = f"{model.model} - {rootdir}"
+        content = f"RAG chain of {model.model} in {rootdir}"
+        profiles_fileinfo.append(
+            {
+                "name": name,
+                "basepath": basedir,
+                "fullpath": rootdir,
+                "model": model.model,
+                "content": content,
+            }
+        )
         profiles.append(
             cl.ChatProfile(
-                name=f"{model.model} - {rootdir}",
-                markdown_description=f"RAG chain of {model} in {rootdir}",
+                name=name,
+                markdown_description=content,
                 # icon="https://picsum.photos/200",
+                default=(len(profiles) == 0),
             )
         )
+    print(profiles)
     return profiles
 
 
 @cl.on_chat_start
 async def on_chat_start():
     user = cl.user_session.get("user")
-    chat_profile: cl.ChatProfile = cl.user_session.get("chat_profile")
-    await cl.Message(content=f"{chat_profile.name}").send()
+    chat_profile = cl.user_session.get("chat_profile")
+    profile_fileinfo = [
+        item for item in profiles_fileinfo if item.get("name") == chat_profile
+    ][0]
+    content = profile_fileinfo.get("content")
+    await cl.Message(content=f"{content}").send()
 
 
 @cl.on_message
 async def on_message(message: cl.Message):
     reply = cl.Message(content="", elements=[])
+    chat_profile = cl.user_session.get("chat_profile")
+
+    profile_fileinfo = [
+        item for item in profiles_fileinfo if item.get("name") == chat_profile
+    ][0]
+    basepath = profile_fileinfo.get("basepath")
+
+    # Vector store
+    dense_vectorstore = Chroma(
+        collection_name=basepath,
+        embedding_function=embeddings,
+        client=client_chroma,
+    )
+    sparse_vectorstore = ElasticsearchStore(
+        index_name=basepath,
+        embedding=embeddings,
+        es_url=ELASTICSEARCH_API_URL,
+        strategy=ElasticsearchStore.BM25RetrievalStrategy(),
+    )
+
+    # Dense Retriever
+    dense_retriever = dense_vectorstore.as_retriever(search_kwargs={"k": 5})
+
+    # Sparse Retriever
+    sparse_retriever = sparse_vectorstore.as_retriever(search_kwargs={"k": 5})
+
+    # Ensemble Retriever
+    ensemble_retriever = EnsembleRetriever(
+        retrievers=[dense_retriever, sparse_retriever], weights=[0.5, 0.5]
+    )
+
+    # Reranker
+    compressor = FlashrankRerank(score_threshold=0.90, top_n=2)
+    compression_retriever = ContextualCompressionRetriever(
+        base_compressor=compressor, base_retriever=ensemble_retriever
+    )
+
+    # RAG chain
+    rag_chain = (
+        RunnablePassthrough(context=(lambda x: format_docs(x["context"])))
+        | prompt
+        | model
+        | parser
+    )
+
+    # Rerank RAG chain
+    runnable = RunnableParallel(
+        {"context": compression_retriever, "question": RunnablePassthrough()}
+    ).assign(answer=rag_chain)
 
     # Stream a reply message
     async for chunk in runnable.astream(message.content):

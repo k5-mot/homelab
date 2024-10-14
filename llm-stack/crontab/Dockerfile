@@ -1,5 +1,4 @@
 FROM mcr.microsoft.com/devcontainers/python:3.12-bookworm
-# FROM mcr.microsoft.com/devcontainers/base:jammy
 
 # Update package lists
 RUN apt-get update && \
@@ -37,5 +36,4 @@ RUN python3 -m pip install --no-cache-dir --upgrade \
 RUN python3 -m spacy download ja_core_news_lg
 
 # Run any command to initialize the container
-# CMD ["sleep", "infinity"]
 CMD [ "sudo", "cron", "&&", "sudo", "tail", "-f", "/var/log/cron.log" ]
