@@ -5,7 +5,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Setup packages
 RUN apt-get update \
     && apt-get upgrade -y \
-    && apt-get install -y git tar curl vim sudo \
+    && apt-get install -y git git-lfs tar curl vim sudo \
     && apt-get install -y --no-install-recommends fonts-noto-cjk \
     && apt-get autoremove -y \
     && apt clean \

@@ -23,6 +23,8 @@ services:
       dockerfile: ./Dockerfile
     container_name: homelab-ollama
     restart: unless-stopped
+    ports:
+      - 11434:11434
     env_file:
       - ../base.env
     volumes:
@@ -39,6 +41,17 @@ services:
               count: all
               capabilities: [ gpu ]
 
+  # https://github.com/Unstructured-IO/unstructured-api
+  unstructured:
+    image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
+    container_name: homelab-unstructured
+    environment:
+      - PORT=9500
+    # ports:
+    #   - 9500:9500
+    networks:
+      - network-reverse-proxy
+
   crontab:
     build:
       context: ./crontab
@@ -48,8 +61,20 @@ services:
     env_file:
       - ../base.env
     volumes:
-      - ./crontab:/workspace
-      # - ./docs/:/workspace/docs
+      - ./docs:/docs:ro
+    networks:
+      - network-reverse-proxy
+
+  chainlit:
+    build:
+      context: ./chainlit
+      dockerfile: ./Dockerfile
+    container_name: homelab-chainlit
+    restart: always
+    env_file:
+      - ../base.env
+    volumes:
+      - ./docs:/docs:ro
     networks:
       - network-reverse-proxy
 
@@ -57,14 +82,31 @@ services:
     image: chromadb/chroma:0.5.11
     container_name: homelab-chroma
     restart: always
-    ports:
-      - 8000:8000
+    # ports:
+    #   - 8000:8000
     environment:
       - IS_PERSISTENT=TRUE
       - PERSIST_DIRECTORY=/chroma/chroma # this is the default path, change it as needed
       - ANONYMIZED_TELEMETRY=FALSE
     volumes:
       - volume-chroma:/chroma/chroma
+    networks:
+      - network-reverse-proxy
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
+    container_name: homelab-elasticsearch
+    restart: always
+    shm_size: 1g
+    # ports:
+    #   - 9200:9200
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+    volumes:
+      - volume-elasticsearch:/usr/share/elasticsearch/data
     networks:
       - network-reverse-proxy
 
@@ -115,7 +157,6 @@ services:
             - driver: nvidia
               count: all
               capabilities: [ gpu ]
-
   # https://github.com/BerriAI/litellm
   # litellm:
   #   image: ghcr.io/berriai/litellm:main-latest
@@ -276,3 +317,5 @@ volumes:
     name: homelab-volume-langflow-db
   volume-chroma:
     name: homelab-volume-chroma
+  volume-elasticsearch:
+    name: homelab-volume-elasticsearch

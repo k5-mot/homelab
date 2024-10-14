@@ -2,47 +2,34 @@ import glob
 import mimetypes
 import os
 import re
-import shutil
 import statistics
-import sys
 from typing import List
 
 import chromadb
-from langchain.prompts import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    SystemMessagePromptTemplate,
-)
-from langchain.retrievers import ContextualCompressionRetriever, EnsembleRetriever
-from langchain.schema import StrOutputParser
+from elasticsearch import Elasticsearch
+
 from langchain.text_splitter import (
     HTMLHeaderTextSplitter,
     MarkdownHeaderTextSplitter,
     RecursiveCharacterTextSplitter,
     SpacyTextSplitter,
 )
-from langchain_anthropic import ChatAnthropic
-from langchain_chroma import Chroma
-from langchain_community.chat_models import ChatOllama
-from langchain_community.document_compressors import FlashrankRerank
 from langchain_community.document_loaders import (  # UnstructuredAPIFileLoader,
     PyMuPDFLoader,
     PyPDFLoader,
     TextLoader,
     UnstructuredPDFLoader,
 )
-
-# from langchain_community.embeddings import OllamaEmbeddings
-from langchain_ollama import OllamaEmbeddings
-from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_chroma import Chroma
 from langchain_unstructured import UnstructuredLoader
-
+from langchain_ollama import OllamaEmbeddings
+from langchain_elasticsearch import ElasticsearchStore
 
 OLLAMA_API_URL = "http://homelab-ollama:11434"
 CHROMA_API_URL = "http://homelab-chroma:8000"
-UNSTRUCTURED_API_URL = "http://homelab-unstructured:8000/general/v0/general"
+ELASTICSEARCH_API_URL = "http://homelab-elasticsearch:9200"
+UNSTRUCTURED_API_URL = "http://homelab-unstructured:9500/general/v0/general"
 UNSTRUCTURED_API_KEY = "unstructured"
 SEPARATORS = [
     "\n\n",
@@ -108,7 +95,13 @@ def load_and_split_pdf(file_path: str) -> List[Document]:
     loaders = [
         PyMuPDFLoader(file_path=file_path),
         PyPDFLoader(file_path=file_path),
-        UnstructuredPDFLoader(file_path=file_path),
+        UnstructuredPDFLoader(
+            file_path=file_path,
+            max_characters=1000000,
+            partition_via_api=True,
+            url=UNSTRUCTURED_API_URL,
+            api_key=UNSTRUCTURED_API_KEY,
+        ),
     ]
     for loader in loaders:
         try:
@@ -201,12 +194,10 @@ def load_and_split_unknown(file_path: str) -> List[Document]:
     # os.environ["UNSTRUCTURED_API_KEY"] = UNSTRUCTURED_API_KEY
     loader = UnstructuredLoader(
         file_path=file_path,
-        chunking_strategy="basic",
         max_characters=1000000,
-        include_orig_elements=False,
-        # partition_via_api=True,
-        # url = UNSTRUCTURED_API_URL,
-        # api_key = UNSTRUCTURED_API_KEY,
+        partition_via_api=True,
+        url=UNSTRUCTURED_API_URL,
+        api_key=UNSTRUCTURED_API_KEY,
     )
     try:
         doc = loader.load()
@@ -267,7 +258,7 @@ def load_and_split_all(dir_path: str = "/workspace/docs") -> List[Document]:
         doc = rearrange_metadata(doc)
         doc = add_fileinfo_to_metadata(doc, file_path)
         docs.extend(doc)
-        print(f"Loaded {file_path}")
+        print(f"\033[31m## Loaded {file_path}\033[0m")
     return docs
 
 
@@ -292,34 +283,59 @@ def eval_documents(docs: List[Document]):
 
 # Clear Vector store
 try:
-    client = chromadb.HttpClient(
+    client_chroma = chromadb.HttpClient(
         host=CHROMA_API_URL,
         settings=chromadb.config.Settings(anonymized_telemetry=False),
     )
-    for collection in client.list_collections():
-        client.delete_collection(name=collection.name)
+    for collection in client_chroma.list_collections():
+        client_chroma.delete_collection(name=collection.name)
+        print(f"\033[31m# Delete Collection: {collection.name} on ChromaDB\033[0m")
+except Exception as e:
+    exit(1)
+
+# Clear Vector store
+try:
+    client_es = Elasticsearch(hosts=ELASTICSEARCH_API_URL)
+    indices_json = client_es.cat.indices(index="*", format="json")
+    indices = [index_json["index"] for index_json in indices_json]
+    for index_name in indices:
+        client_es.indices.delete(
+            index=index_name,
+            allow_no_indices=True,
+        )
+        print(f"\033[31m# Delete Collection: {collection.name} on Elasticsearch\033[0m")
 except Exception as e:
     exit(1)
 
 # Embedding model
 embeddings = OllamaEmbeddings(base_url=OLLAMA_API_URL, model="nomic-embed-text:latest")
 
-for rootdir in glob.glob("/workspace/docs/*/"):
+for rootdir in glob.glob("/docs/*/"):
     collection_name = re.sub("/$", "", rootdir)
     collection_name = os.path.basename(collection_name)
 
     # Documents loader
     documents = load_and_split_all(rootdir)
-    # eval_documents(documents)
-    # save_documents(documents, "./debug/fin")
 
     # Vector store
     vectorstore = Chroma(
         collection_name=collection_name,
         embedding_function=embeddings,
-        client=client,
+        client=client_chroma,
     )
     vectorstore.add_documents(documents)
+    print(f"\033[31m# Add Collection: {collection_name} on ChromaDB\033[0m")
+
+    # Elasticsearch (Sparse)
+    elasticsearch = ElasticsearchStore(
+        es_url=ELASTICSEARCH_API_URL,
+        index_name=collection_name,
+        embedding=embeddings,
+        # es_user="elastic",
+        # es_password="changeme",
+    )
+    elasticsearch.add_documents(documents)
+    print(f"\033[31m# Add Collection: {collection_name} on Elasticsearch\033[0m")
 
 
 # document_1 = Document(
