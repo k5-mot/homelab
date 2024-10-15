@@ -23,8 +23,6 @@ services:
       dockerfile: ./Dockerfile
     container_name: homelab-ollama
     restart: unless-stopped
-    ports:
-      - 11434:11434
     env_file:
       - ../base.env
     volumes:
@@ -47,8 +45,6 @@ services:
     container_name: homelab-unstructured
     environment:
       - PORT=9500
-    # ports:
-    #   - 9500:9500
     networks:
       - network-reverse-proxy
 
@@ -65,14 +61,17 @@ services:
     networks:
       - network-reverse-proxy
 
+  # https://docs.chainlit.io/authentication/oauth#gitlab
   chainlit:
     build:
       context: ./chainlit
       dockerfile: ./Dockerfile
     container_name: homelab-chainlit
     restart: always
-    ports:
-      - 8000:8000
+    environment:
+      - OAUTH_GITLAB_CLIENT_ID=""
+      - OAUTH_GITLAB_CLIENT_SECRET=""
+      - OAUTH_GITLAB_DOMAIN=""
     env_file:
       - ../base.env
     volumes:
@@ -84,8 +83,6 @@ services:
     image: chromadb/chroma:0.5.11
     container_name: homelab-chroma
     restart: always
-    ports:
-      - 8001:8000
     environment:
       - IS_PERSISTENT=TRUE
       - PERSIST_DIRECTORY=/chroma/chroma # this is the default path, change it as needed
@@ -100,8 +97,6 @@ services:
     container_name: homelab-elasticsearch
     restart: always
     shm_size: 1g
-    ports:
-      - 9200:9200
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
@@ -141,8 +136,6 @@ services:
       dockerfile: ./Dockerfile
     container_name: homelab-jupyterhub
     restart: unless-stopped
-    # ports:
-    #   - 8000:8000
     env_file:
       - ../base.env
     environment:
@@ -159,60 +152,6 @@ services:
             - driver: nvidia
               count: all
               capabilities: [ gpu ]
-  # https://github.com/BerriAI/litellm
-  # litellm:
-  #   image: ghcr.io/berriai/litellm:main-latest
-  #   container_name: homelab-litellm
-  #   restart: unless-stopped
-  #   command: [ "--config", "/app/config.yaml", "--port", "4000" ]
-  #   env_file:
-  #     - ../base.env
-  #     - .env
-  #   environment:
-  #     - MASTER_KEY=sk-litellm
-  #   volumes:
-  #     - ./litellm/config.yaml:/app/config.yaml
-  #   networks:
-  #     - network-ollama
-
-  # https://github.com/open-webui/pipelines
-  # pipelines:
-  #   image: ghcr.io/open-webui/pipelines:main
-  #   container_name: homelab-pipelines
-  #   restart: always
-  #   env_file:
-  #     - ../base.env
-  #   volumes:
-  #     - volume-pipelines:/app/pipelines
-  #   networks:
-  #     - network-ollama
-
-
-  # https://docs.openwebui.com/getting-started/#docker-compose
-  # open-webui:
-  #   image: ghcr.io/open-webui/open-webui:main
-  #   container_name: homelab-open-webui
-  #   restart: unless-stopped
-  #   ports:
-  #     - 30110:8080
-  #   env_file:
-  #     - ../base.env
-  #     - .env
-  #   environment:
-  #     - OLLAMA_BASE_URL=http://homelab-ollama:11434
-  #     - OPENAI_API_BASE_URL=http://homelab-litellm:4000/v1;http://homelab-pipelines:9099
-  #     - OPENAI_API_KEY=sk-litellm;0p3n-w3bu!
-  #     - WEBUI_AUTH=False
-  #   volumes:
-  #     - volume-open-webui:/app/backend/data
-  #     # - ./docs/:/app/backend/data/docs:ro
-  #   networks:
-  #     - network-reverse-proxy
-  #     - network-ollama
-  #   depends_on:
-  #     - ollama
-
-
   # nni:
   #   image: docker.io/msranni/nni:latest
   #   container_name: homelab-nni
@@ -221,19 +160,7 @@ services:
   #     - ../base.env
   #     - .env
 
-  # https://github.com/Unstructured-IO/unstructured-api
-  # unstructured:
-  #   image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
-  #   container_name: homelab-unstructured
-  #   restart: always
-  #   ports:
-  #     - 30412:8000
-  #   environment:
-  #     - UNSTRUCTURED_API_KEY="unstructured"
-  #   env_file:
-  #     - ../base.env
-  #     - .env
-  # # https://docs.langflow.org/deployment-docker
+  # https://docs.langflow.org/deployment-docker
   # langflow:
   #   image: docker.io/langflowai/langflow:latest
   #   container_name: homelab-langflow
@@ -244,6 +171,7 @@ services:
   #     - ../base.env
   #   environment:
   #     - LANGFLOW_DATABASE_URL=postgresql://langflow_user:langflow_pass@langflow-db:5432/langflow_base
+  #     - LANGFLOW_STORE_ENVIRONMENT_VARIABLES=true
   #   volumes:
   #     - volume-langflow:/app/langflow
   #   networks:
@@ -266,34 +194,11 @@ services:
   #   networks:
   #     - network-langflow
   #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1"]
+  #     test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1" ]
   #     interval: 10s
   #     timeout: 10s
   #     retries: 5
   #     start_period: 5s
-
-  # # https://github.com/FlowiseAI/Flowise/blob/main/docker/README.md
-  # flowise:
-  #   image: docker.io/flowiseai/flowise
-  #   container_name: homelab-flowise
-  #   restart: always
-  #   entrypoint: /bin/sh -c "sleep 3; flowise start"
-  #   ports:
-  #     - 30112:3000
-  #   env_file:
-  #     - ../base.env
-  #   environment:
-  #     - PORT=3000
-  #     - FLOWISE_USERNAME=flowise-user
-  #     - FLOWISE_PASSWORD=flowise-pass
-  #     - DATABASE_PATH=/root/.flowise
-  #     - APIKEY_PATH=/root/.flowise
-  #     - SECRETKEY_PATH=/root/.flowise
-  #     - LOG_PATH=/root/.flowise/logs
-  #     - BLOB_STORAGE_PATH=/root/.flowise/storage
-  #   volumes:
-  #     - /srv/flowise:/root/.flowise
-
 
 networks:
   network-reverse-proxy:
@@ -309,10 +214,6 @@ volumes:
     name: homelab-volume-ollama
   volume-ollama-build:
     name: homelab-volume-ollama-build
-  volume-open-webui:
-    name: homelab-volume-open-webui
-  volume-pipelines:
-    name: homelab-volume-pipelines
   volume-langflow:
     name: homelab-volume-langflow
   volume-langflow-db:
