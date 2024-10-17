@@ -9,7 +9,8 @@ USER vscode
 
 # Install any needed packages specified in requirements.txt
 RUN python3 -m pip install --no-cache-dir --upgrade pip && \
-    python3 -m pip install --no-cache-dir -r requirements.txt
+    python3 -m pip install chainlit langchain langchain-core "langserve[client]"
+# python3 -m pip install --no-cache-dir -r requirements.txt
 
 # Run any command to initialize the container
 EXPOSE 8000

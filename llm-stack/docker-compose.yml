@@ -58,6 +58,22 @@ services:
       - ../base.env
     volumes:
       - ./docs:/docs:ro
+      - ./:/workspaces:cached
+    networks:
+      - network-reverse-proxy
+
+  langserve:
+    build:
+      context: ./langserve
+      dockerfile: ./Dockerfile
+    container_name: homelab-langserve
+    restart: always
+    ports:
+      - 31000:8000
+    env_file:
+      - ../base.env
+    volumes:
+      - ./docs:/docs:ro
     networks:
       - network-reverse-proxy
 
