@@ -1,0 +1,116 @@
+
+name: homelab-exp-stack
+
+services:
+
+  # https://docs.requarks.io/install/docker
+  wikijs:
+    image: ghcr.io/requarks/wiki:2
+    container_name: homelab-wikijs
+    restart: unless-stopped
+    ports:
+      - 30010:3000
+    env_file:
+      - ../noproxy.env
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: wikijs-db
+      DB_PORT: 5432
+      DB_USER: wikijs
+      DB_PASS: wikijsrocks
+      DB_NAME: wiki
+    volumes:
+      - volume-wikijs:/wiki/data/content
+    networks:
+      # - network-reverse-proxy
+      - network-wikijs
+    depends_on:
+      - wikijs-db
+
+  wikijs-db:
+    image: docker.io/postgres:15-alpine
+    container_name: homelab-wikijs-db
+    restart: unless-stopped
+    env_file:
+      - ../noproxy.env
+    environment:
+      POSTGRES_DB: wiki
+      POSTGRES_PASSWORD: wikijsrocks
+      POSTGRES_USER: wikijs
+    volumes:
+      - volume-wikijs-db:/var/lib/postgresql/data
+    networks:
+      - network-wikijs
+    logging:
+      driver: "none"
+
+
+  docmost:
+    image: docker.io/docmost/docmost:latest
+    container_name: homelab-docmost
+    restart: unless-stopped
+    ports:
+      - 30011:3000
+    env_file:
+      - ../noproxy.env
+    environment:
+      APP_URL: 'http://localhost:30011/'
+      APP_SECRET: '10f563cefb3a65fbcb5bd0b15e1932bc3a4949ef2b3d04af047d048bd5be2125'
+      DATABASE_URL: 'postgresql://docmost:STRONG_DB_PASSWORD@homelab-docmost-db:5432/docmost?schema=public'
+      REDIS_URL: 'redis://homelab-docmost-redis:6379'
+    volumes:
+      - volume-docmost:/app/data/storage
+    networks:
+      # - network-reverse-proxy
+      - network-docmost
+    depends_on:
+      - docmost-db
+      - docmost-redis
+
+  docmost-db:
+    image: docker.io/postgres:16-alpine
+    container_name: homelab-docmost-db
+    restart: unless-stopped
+    env_file:
+      - ../noproxy.env
+    environment:
+      POSTGRES_DB: docmost
+      POSTGRES_USER: docmost
+      POSTGRES_PASSWORD: STRONG_DB_PASSWORD
+    volumes:
+      - volume-docmost-db:/var/lib/postgresql/data
+    networks:
+      - network-docmost
+
+  docmost-redis:
+    image: docker.io/redis:7.2-alpine
+    container_name: homelab-docmost-redis
+    restart: unless-stopped
+    env_file:
+      - ../noproxy.env
+    volumes:
+      - volume-docmost-redis:/data
+    networks:
+      - network-docmost
+
+
+networks:
+  network-reverse-proxy:
+    external: true
+  network-wikijs:
+    name: homelab-network-wikijs
+  network-docmost:
+    name: homelab-network-docmost
+
+
+volumes:
+  volume-wikijs:
+    name: homelab-volume-wikijs
+  volume-wikijs-db:
+    name: homelab-volume-wikijs-db
+  volume-docmost:
+    name: homelab-volume-docmost
+  volume-docmost-db:
+    name: homelab-volume-docmost-db
+  volume-docmost-redis:
+    name: homelab-volume-docmost-redis
