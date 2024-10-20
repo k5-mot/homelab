@@ -6,3 +6,7 @@
 	path = ops-stack
 	url = git@github.com:k5-mot/homelab-ops-stack.git
 	branch = main
+[submodule "dev-stack"]
+	path = dev-stack
+	url = git@github.com:k5-mot/homelab-dev-stack.git
+	branch = main
