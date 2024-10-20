@@ -1,14 +1,34 @@
-# Homelab Stacks
+# :house: Homelab Stacks
 
-## :folder: Folder Structure
+## :file_folder: Folder Structure
 
+- base-stack
+  - Reverse proxy
 - dev-stack
-  - main features
-  - behind reverse proxy
-- exp-stack
-  - experimental features
+  - Development features
+- ops-stack
+  - Monitoring features
 - llm-stack
-  - ollama based environment
+  - LLM features
+
+## :children_crossing: Usage
+
+```bash
+# BASE 1
+docker compose --env-file ./base.env -f ./base-stack/docker-compose.yml up -d --build --remove-orphans
+
+# DEV
+docker compose --env-file ./base.env -f ./dev-stack/docker-compose.yml up -d --build --remove-orphans
+
+# LLM
+docker compose --env-file ./base.env --env-file ./llm-stack/.env -f ./llm-stack/docker-compose.yml up -d --build --remove-orphans
+
+# OPS
+docker compose --env-file ./base.env --env-file ./ops-stack/.env -f ./ops-stack/docker-compose.yml up -d --build --remove-orphans
+
+# BASE 2
+docker compose --env-file ./base.env -f ./base-stack/docker-compose.yml -f ./base-stack/docker-compose.override.yml up -d --build --remove-orphans
+```
 
 ## :memo: HTTPS化
 

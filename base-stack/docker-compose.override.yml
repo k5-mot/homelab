@@ -1,0 +1,9 @@
+name: ${HOMELAB_NAME}-base-stack
+
+services:
+
+  nginx:
+    volumes:
+      - ../dev-stack/nginx/nginx.conf:/etc/nginx/nginx.conf.d/dev.conf:ro
+      # - ../ops-stack/nginx/nginx.conf:/etc/nginx/nginx.conf.d/ops.conf:ro
+      - ../llm-stack/nginx/nginx.conf:/etc/nginx/nginx.conf.d/llm.conf:ro
