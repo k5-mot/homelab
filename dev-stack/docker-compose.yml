@@ -1,0 +1,353 @@
+name: ${HOMELAB_NAME}-dev-stack
+
+services:
+
+  # nginx:
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf.d/dev.conf:ro
+
+  # https://docs.gitlab.com/ee/install/docker.html
+  gitlab:
+    image: docker.io/gitlab/gitlab-ee:16.10.3-ee.0
+    container_name: ${HOMELAB_NAME}-gitlab
+    restart: always
+    shm_size: 256m
+    environment:
+      GITLAB_OMNIBUS_CONFIG: "from_file('/etc/gitlab/omnibus_config.rb')"
+    volumes:
+      - volume-gitlab-config:/etc/gitlab
+      - volume-gitlab-log:/var/log/gitlab
+      - volume-gitlab-data:/var/opt/gitlab
+      - ./gitlab/omnibus_config.rb:/etc/gitlab/omnibus_config.rb
+    networks:
+      - network-reverse-proxy
+      - network-gitlab
+
+  # https://docs.gitlab.com/runner/install/docker.html
+  gitlab-runner:
+    image: docker.io/gitlab/gitlab-runner:alpine
+    container_name: ${HOMELAB_NAME}-gitlab-runner
+    restart: always
+    environment:
+      - HTTP_PROXY=${PROXY_ADDRESS}
+      - HTTPS_PROXY=${PROXY_ADDRESS}
+    volumes:
+      - /srv/gitlab-runner/config:/etc/gitlab-runner
+      - /srv/gitlab-runner/home:/home/gitlab-runner
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - network-gitlab
+
+  # https://docs.kroki.io/kroki/setup/use-docker-or-podman/#_run_multiple_kroki_containers_together
+  kroki:
+    image: docker.io/yuzutech/kroki
+    container_name: ${HOMELAB_NAME}-kroki
+    environment:
+      - KROKI_MERMAID_HOST=kroki-mermaid
+      - KROKI_BPMN_HOST=kroki-bpmn
+      - KROKI_EXCALIDRAW_HOST=kroki-excalidraw
+    networks:
+      - network-reverse-proxy
+      - network-kroki
+      - network-gitlab
+    depends_on:
+      - kroki-mermaid
+      - kroki-bpmn
+      - kroki-excalidraw
+
+  kroki-mermaid:
+    image: docker.io/yuzutech/kroki-mermaid
+    container_name: ${HOMELAB_NAME}-kroki-mermaid
+    networks:
+      - network-kroki
+
+  kroki-bpmn:
+    image: docker.io/yuzutech/kroki-bpmn
+    container_name: ${HOMELAB_NAME}-kroki-bpmn
+    networks:
+      - network-kroki
+
+  kroki-excalidraw:
+    image: docker.io/yuzutech/kroki-excalidraw
+    container_name: ${HOMELAB_NAME}-kroki-excalidraw
+    networks:
+      - network-kroki
+
+  # https://github.com/jenkinsci/docker/blob/master/README.md
+  # jenkins:
+  #   image: docker.io/jenkins/jenkins:lts
+  #   container_name: ${HOMELAB_NAME}-jenkins
+  #   environment:
+  #     - "JENKINS_OPTS=--prefix=/jenkins"
+  #     - HTTP_PROXY=${PROXY_ADDRESS}
+  #     - HTTPS_PROXY=${PROXY_ADDRESS}
+  #   volumes:
+  #     - volume-jenkins:/var/jenkins_home
+  #   networks:
+  #     - network-reverse-proxy
+  #     - network-jenkins
+
+  # jenkins-ssh:
+  #   image: docker.io/jenkins/ssh-agent:latest
+  #   container_name: ${HOMELAB_NAME}-jenkins-ssh
+  #   volumes:
+  #     - volume-jenkins-ssh-agent:/home/jenkins/agent
+  #     - volume-jenkins-ssh-tmp:/tmp
+  #     - volume-jenkins-ssh-dot:/home/jenkins/.jenkins
+  #     - volume-jenkins-ssh-run:/run
+  #     - volume-jenkins-ssh-varrun:/var/run
+  #   networks:
+  #     - network-jenkins
+
+  # ID:admin PW:admin
+  # redmine:
+  #   image: redmine:revpro
+  #   build:
+  #     context: .
+  #     dockerfile: ./redmine/Dockerfile
+  #   container_name: ${HOMELAB_NAME}-redmine
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     REDMINE_DB_POSTGRES: ${HOMELAB_NAME}-redmine-db
+  #     REDMINE_DB_DATABASE: redmine
+  #     REDMINE_DB_USERNAME: redmine_user
+  #     REDMINE_DB_PASSWORD: redmine_pass
+  #     REDMINE_SECRET_KEY_BASE: supersecretkey
+  #     REDMINE_DB_PORT: 5432
+  #   volumes:
+  #     - volume-redmine:/usr/src/redmine/files
+  #   networks:
+  #     - network-reverse-proxy
+  #     - network-redmine
+  #   depends_on:
+  #     redmine-db:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:3000/redmine/"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #     start_period: 40s
+
+
+  # redmine-db:
+  #   image: docker.io/postgres:16.3
+  #   container_name: ${HOMELAB_NAME}-redmine-db
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     POSTGRES_DB:       redmine
+  #     POSTGRES_USER:     redmine_user
+  #     POSTGRES_PASSWORD: redmine_pass
+  #   volumes:
+  #     - volume-redmine-db:/var/lib/postgresql/data
+  #   networks:
+  #     - network-redmine
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1"]
+  #     interval: 10s
+  #     timeout: 10s
+  #     retries: 5
+  #     start_period: 5s
+
+  # https://gethomepage.dev/latest/configs/docker/#using-docker-socket-proxy
+  dockerproxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:latest
+    container_name: ${HOMELAB_NAME}-dockerproxy
+    restart: unless-stopped
+    privileged: true
+    environment:
+      - CONTAINERS=1 # Allow access to viewing containers
+      - SERVICES=0 # Allow access to viewing services (necessary when using Docker Swarm)
+      - TASKS=0 # Allow access to viewing tasks (necessary when using Docker Swarm)
+      - POST=0 # Disallow any POST operations (effectively read-only)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro # Mounted as read-only
+    networks:
+      - network-homepage
+    healthcheck:
+      test: wget --spider http://localhost:2375/version || exit 1
+      interval: 29s
+      timeout: 5s
+      retries: 3
+      start_period: 21s
+
+  # https://github.com/gethomepage/homepage/
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: ${HOMELAB_NAME}-homepage
+    restart: unless-stopped
+    privileged: true
+    environment:
+      HTTP_PROXY: ${PROXY_ADDRESS}
+      HTTPS_PROXY: ${PROXY_ADDRESS}
+    #   # use `id` command
+    #   PUID: 1000
+    #   PGID: 1000
+    volumes:
+      # Make sure your local config directory exists
+      - ./homepage/config:/app/config
+      # optional, for docker integrations
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - network-reverse-proxy
+      - network-homepage
+    depends_on:
+      - dockerproxy
+
+  # https://coder.com/docs/code-server/latest/install#docker
+  coder:
+    image: lscr.io/linuxserver/code-server:latest
+    container_name: ${HOMELAB_NAME}-coder
+    restart: always
+    privileged: true
+    environment:
+      - UID=1000
+      - GID=1000
+      - TZ=Asia/Tokyo
+      - PASSWORD= #optional
+      - HASHED_PASSWORD= #optional
+      - SUDO_PASSWORD= #optional
+      - SUDO_PASSWORD_HASH= #optional
+      - PROXY_DOMAIN= #optional
+      - HTTP_PROXY=${PROXY_ADDRESS}
+      - HTTPS_PROXY=${PROXY_ADDRESS}
+    networks:
+      - network-reverse-proxy
+    volumes:
+      - /srv/coder/.local:/home/coder/.local
+      - /srv/coder/.config:/home/coder/.config
+      - /srv/coder/project:/home/coder/project
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8443/healthz" ]
+      interval: 1s
+      timeout: 10s
+      retries: 5
+
+  # https://github.com/support-project/docker-knowledge/blob/master/docker-compose.yml
+  knowledge:
+    image: knowledge:revpro
+    build:
+      context: .
+      dockerfile: ./knowledge/Dockerfile
+      args:
+        - HTTP_PROXY=${PROXY_ADDRESS}
+        - HTTPS_PROXY=${PROXY_ADDRESS}
+    container_name: ${HOMELAB_NAME}-knowledge
+    restart: always
+    volumes:
+      - ./knowledge/custom_connection.xml:/root/.knowledge/custom_connection.xml
+      - /srv/knowledge:/root/.knowledge
+    networks:
+      - network-reverse-proxy
+      - network-knowledge
+    depends_on:
+      - knowledge-db
+
+  knowledge-db:
+    image: docker.io/postgres:9
+    container_name: ${HOMELAB_NAME}-knowledge-db
+    restart: always
+    environment:
+      - POSTGRES_USER=knowledge_user
+      - POSTGRES_PASSWORD=knowledge_password
+      - POSTGRES_DB=knowledge_database
+    volumes:
+      # - /srv/knowledge-db/initdb:/docker-entrypoint-initdb.d
+      - /srv/knowledge-db/data:/var/lib/postgresql/data
+    networks:
+      - network-knowledge
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+  # nextcloud:
+  #   image: docker.io/nextcloud
+  #   container_name: ${HOMELAB_NAME}-nextcloud
+  #   restart: always
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     - MYSQL_HOST=nextcloud-db
+  #     - MYSQL_DATABASE=nextcloud
+  #     - MYSQL_USER=nextcloud_user
+  #     - MYSQL_PASSWORD=nextcloud_password
+  #   volumes:
+  #     - /srv/nextcloud:/var/www/html
+  #     - ./nextcloud/setup.sh:/root/setup.sh
+  #   networks:
+  #     - network-reverse-proxy
+  #     - network-nextcloud
+  #   depends_on:
+  #     - nextcloud-db
+
+  # # https://mariadb.org/mariadb-server-docker-official-images-healthcheck-without-mysqladmin/
+  # nextcloud-db:
+  #   image: docker.io/mariadb
+  #   container_name: ${HOMELAB_NAME}-nextcloud-db
+  #   restart: always
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     - MARIADB_DATABASE=nextcloud
+  #     - MARIADB_ROOT_PASSWORD=nextcloud_root_pw
+  #     - MARIADB_USER=nextcloud_user
+  #     - MARIADB_PASSWORD=nextcloud_password
+  #   volumes:
+  #     - /srv/nextcloud-db:/var/lib/mysql
+  #   networks:
+  #     - network-nextcloud
+  #   healthcheck:
+  #     test: [ "CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized" ]
+  #     start_period: 1m
+  #     start_interval: 10s
+  #     interval: 1m
+  #     timeout: 5s
+  #     retries: 3
+
+
+networks:
+  network-reverse-proxy:
+    name: ${HOMELAB_NAME}-network-reverse-proxy
+    external: true
+  network-gitlab:
+    name: ${HOMELAB_NAME}-network-gitlab
+  network-kroki:
+    name: ${HOMELAB_NAME}-network-kroki
+  network-redmine:
+    name: ${HOMELAB_NAME}-network-redmine
+  network-homepage:
+    name: ${HOMELAB_NAME}-network-homepage
+  network-jenkins:
+    name: ${HOMELAB_NAME}-network-jenkins
+  network-knowledge:
+    name: ${HOMELAB_NAME}-network-knowledge
+  network-nextcloud:
+    name: ${HOMELAB_NAME}-network-nextcloud
+
+volumes:
+  volume-redmine:
+    name: ${HOMELAB_NAME}-volume-redmine
+  volume-redmine-db:
+    name: ${HOMELAB_NAME}-volume-redmine-db
+  volume-jenkins:
+    name: ${HOMELAB_NAME}-volume-jenkins
+  volume-jenkins-ssh-tmp:
+    name: ${HOMELAB_NAME}-volume-jenkins-ssh-tmp
+  volume-jenkins-ssh-agent:
+    name: ${HOMELAB_NAME}-volume-jenkins-ssh-agent
+  volume-jenkins-ssh-dot:
+    name: ${HOMELAB_NAME}-volume-jenkins-ssh-dot
+  volume-jenkins-ssh-run:
+    name: ${HOMELAB_NAME}-volume-jenkins-ssh-run
+  volume-jenkins-ssh-varrun:
+    name: ${HOMELAB_NAME}-volume-jenkins-ssh-varrun
+  volume-gitlab-config:
+    name: ${HOMELAB_NAME}-volume-gitlab-config
+  volume-gitlab-log:
+    name: ${HOMELAB_NAME}-volume-gitlab-log
+  volume-gitlab-data:
+    name: ${HOMELAB_NAME}-volume-gitlab-data

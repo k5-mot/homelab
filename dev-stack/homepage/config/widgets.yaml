@@ -1,0 +1,19 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/latest/configs/service-widgets
+
+- logo:
+    icon: https://avatars.githubusercontent.com/u/34744243?v=4 # optional
+
+- greeting:
+    text_size: xl
+    text: K5
+
+- resources:
+    cpu: true
+    memory: true
+    disk: /
+
+- search:
+    provider: bing
+    target: _blank

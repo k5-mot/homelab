@@ -1,0 +1,37 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/latest/configs/settings
+
+# startUrl: http://192.168.11.2/
+# base: /
+favicon: http://192.168.11.2/nginx/favicon.ico
+background:
+  # image: https://images.unsplash.com/photo-1502790671504-542ad42d5189?auto=format&fit=crop&w=2560&q=80
+  image: http://192.168.11.2/nginx/background.jpg
+  blur: sm # sm, "", md, xl... see https://tailwindcss.com/docs/backdrop-blur
+  saturate: 100 # 0, 50, 100... see https://tailwindcss.com/docs/backdrop-saturate
+  brightness: 75 # 0, 50, 75... see https://tailwindcss.com/docs/backdrop-brightness
+  opacity: 70 # 0-100
+
+layout:
+  - 開発者向けサービス:
+      icon: si-docker-#0db7ed
+      style: row
+      columns: 3
+  - 管理者向けサービス:
+      icon: si-docker-#0db7ed
+      style: row
+      columns: 4
+  - 実験中のサービス:
+      icon: si-docker-#0db7ed
+      style: row
+      columns: 4
+  - 開発者向けサービス(バックエンド):
+      icon: si-docker-#0db7ed
+      style: row
+      columns: 4
+      initiallyCollapsed: true
+
+
+showStats: true
+headerStyle: boxed
