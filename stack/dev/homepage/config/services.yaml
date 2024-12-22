@@ -1,0 +1,211 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/latest/configs/services
+
+- 開発者向けサービス:
+  - Homepage:
+      href: http://192.168.11.2/
+      icon: homepage.png
+      description: ほーむ
+      server: my-docker
+      container: homelab-homepage
+  - GitLab:
+      href: http://192.168.11.2/gitlab/
+      icon: gitlab.svg
+      description: ぎっと
+      server: my-docker
+      container: homelab-gitlab
+  - Kroki!:
+      href: http://192.168.11.2/kroki/
+      icon: diagrams-net.svg
+      description: 作図
+      server: my-docker
+      container: homelab-kroki
+  - Redmine:
+      href: http://192.168.11.2/redmine/
+      icon: si-redmine-#B32024
+      description: ちけっと
+      server: my-docker
+      container: homelab-redmine
+  - Code-Server:
+      href: http://192.168.11.2/coder/
+      icon: code-server.png
+      description: かいはつかんきょう
+      server: my-docker
+      container: homelab-coder
+  - Jenkins:
+      href: http://192.168.11.2/jenkins/
+      icon: jenkins.png
+      description: CICD
+      server: my-docker
+      container: homelab-jenkins
+  - Knowledge:
+      href: http://192.168.11.2/knowledge/
+      # icon: mdi-crosshairs-question
+      icon: https://avatars.githubusercontent.com/u/10343544?s=200&v=4
+      description: なれっじ
+      server: my-docker
+      container: homelab-knowledge
+  - Nextcloud:
+      href: http://192.168.11.2/nextcloud/
+      icon: nextcloud.svg
+      description: すとれーじ
+      server: my-docker
+      container: homelab-nextcloud
+  - Miniflux:
+      href: http://192.168.11.2/miniflux/
+
+      icon: miniflux.svg
+      description: RSS
+      server: my-docker
+      container: homelab-miniflux
+
+- 管理者向けサービス:
+  - Cockpit:
+      href: http://192.168.11.2:9090
+      icon: cockpit.png
+      description: サーバ監視
+      ping: localhost
+  - Nginx:
+      href: http://192.168.11.2/nginx/
+      icon: nginx.svg
+      description: さーば、りばぷろ
+      server: my-docker
+      container: homelab-nginx
+  - phpLDAPadmin:
+      href: http://192.168.11.2/openldap/
+      icon: phpldapadmin.png
+      description: えるだっぷのUI
+      server: my-docker
+      container: homelab-phpldapadmin
+  - OpenLDAP:
+      icon: phpldapadmin.png
+      description: えるだっぷ
+      server: my-docker
+      container: homelab-openldap
+  - Portainer:
+      href: http://192.168.11.2/portainer/
+      icon: portainer.svg
+      description: どっかー
+      server: my-docker
+      container: homelab-portainer
+  - Grafana:
+      href: http://192.168.11.2/grafana/
+      icon: grafana.svg
+      description: さーば監視
+      server: my-docker
+      container: homelab-grafana
+  - Prometheus:
+      icon: prometheus.svg
+      description: めとりくす
+      server: my-docker
+      container: homelab-prometheus
+  - Nginx Exporter:
+      icon: prometheus.svg
+      description: めとりくす収集
+      server: my-docker
+      container: homelab-nginx-exporter
+  - Node Exporter:
+      icon: prometheus.svg
+      description: めとりくす収集
+      server: my-docker
+      container: homelab-node-exporter
+  - cAdvisor:
+      icon: cadvisor.png
+      description: dockerめとりくす収集
+      server: my-docker
+      container: homelab-cadvisor
+
+- 実験中のサービス:
+  - Open WebUI:
+      href: http://192.168.11.2:30012/
+      icon: open-webui.png
+      description: AIくんUI (リバプロなし)
+      server: my-docker
+      container: homelab-ollama-webui
+  - Ollama:
+      href: http://192.168.11.2:30012/
+      icon: ollama.svg
+      description: AIくん本体 (リバプロなし)
+      server: my-docker
+      container: homelab-ollama
+  - Wiki.js:
+      href: http://192.168.11.2:30010
+      icon: wikijs.png
+      description: なれっじ (リバプロなし)
+      server: my-docker
+      container: homelab-wikijs
+  - PostgreSQL for Wiki.js:
+      icon: postgres.svg
+      description: DB
+      server: my-docker
+      container: homelab-wikijs-db
+  - Docmost:
+      href: http://192.168.11.2:30011
+      icon: https://docmost.com/favicon.ico
+      description: のーとていきんぐ
+      server: my-docker
+      container: homelab-docmost
+  - PostgreSQL for Docmost:
+      icon: postgres.svg
+      description: DB
+      server: my-docker
+      container: homelab-docmost-db
+  - Redis for Docmost:
+      icon: redis.svg
+      description: In-Memory DB
+      server: my-docker
+      container: homelab-docmost-redis
+
+
+- 開発者向けサービス(バックエンド):
+  - GitLab Runner:
+      icon: gitlab.svg
+      description: ぎっと
+      server: my-docker
+      container: homelab-gitlab-runner
+  - Docker Socket Proxy:
+      icon: docker.svg
+      description: ほーむのDockerAPI用
+      server: my-docker
+      container: homelab-dockerproxy
+  - Jenkins SSH Agent:
+      icon: jenkins.png
+      description: CICD
+      server: my-docker
+      container: homelab-jenkins-ssh
+  - PostgreSQL for Redmine:
+      icon: postgres.svg
+      description: DB
+      server: my-docker
+      container: homelab-redmine-db
+  - PostgreSQL for Knowledge:
+      icon: postgres.svg
+      description: DB
+      server: my-docker
+      container: homelab-knowledge-db
+  - MariaDB for Nextcloud:
+      icon: mariadb.svg
+      description: DB
+      server: my-docker
+      container: homelab-nextcloud-db
+  - PostgreSQL for Miniflux:
+      icon: postgres.svg
+      description: DB
+      server: my-docker
+      container: homelab-miniflux-db
+  - Kroki!-Mermaid:
+      icon: si-mermaid-#ff3670
+      description: 作図
+      server: my-docker
+      container: homelab-kroki-mermaid
+  - Kroki!-bpmn:
+      icon: diagrams-net.svg
+      description: 作図
+      server: my-docker
+      container: homelab-kroki-bpmn
+  - Kroki!-excalidraw:
+      icon: excalidraw.svg
+      description: 作図
+      server: my-docker
+      container: homelab-kroki-excalidraw

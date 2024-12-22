@@ -1,0 +1,47 @@
+name: ${STACK_PREFIX}-base-stack
+services:
+
+  # https://doc.traefik.io/traefik/user-guides/docker-compose/basic-example/
+  traefik:
+    image: traefik:v3.2
+    container_name: ${STACK_PREFIX}-traefik
+    restart: unless-stopped
+    command:
+      #- --log.level=DEBUG
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entryPoints.web.address=:80
+      - --entryPoints.websecure.address=:443
+      # - --certificatesresolvers.myresolver.acme.tlschallenge=true
+      # - --certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      # - --certificatesresolvers.myresolver.acme.email=postmaster@example.com
+      # - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      - ./base/ssl:/ssl
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - network-traefik
+
+  whoami:
+    image: traefik/whoami
+    container_name: ${STACK_PREFIX}-whoami
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=network-traefik
+      - traefik.http.routers.whoami.rule=PathPrefix(`/whoami`)
+      - traefik.http.routers.whoami.entrypoints=web
+      - traefik.http.routers.whoami.service=whoami
+      - traefik.http.services.whoami.loadbalancer.server.port=80
+    networks:
+      - network-traefik
+
+networks:
+  network-traefik:
+    name: ${STACK_PREFIX}-traefik
+    driver: bridge

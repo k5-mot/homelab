@@ -1,0 +1,26 @@
+name: ${HOMELAB_NAME}-base-stack
+
+services:
+
+  nginx:
+    image: docker.io/nginx:1.27.0
+    container_name: ${HOMELAB_NAME}-nginx
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./nginx/public:/usr/share/nginx/html:rw
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certificate/:/etc/certificate/:rw
+      # - ../dev-stack/nginx/nginx.conf:/etc/nginx/nginx.conf.d/dev.conf:ro
+      # - ../ops-stack/nginx/nginx.conf:/etc/nginx/nginx.conf.d/ops.conf:ro
+      # - ../llm-stack/nginx/nginx.conf:/etc/nginx/nginx.conf.d/llm.conf:ro
+
+    networks:
+      - network-reverse-proxy
+
+networks:
+  network-reverse-proxy:
+    name: ${HOMELAB_NAME}-network-reverse-proxy
+    driver: bridge

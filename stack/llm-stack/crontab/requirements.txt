@@ -1,0 +1,26 @@
+langchain
+langchain-core
+langchain-community
+langchain-text-splitters
+langchain-anthropic
+langchain-openai
+langchain-chroma
+langchain-ollama
+langchain-elasticsearch
+langchain-unstructured
+flashrank
+chromadb
+ollama
+unstructured-client
+unstructured
+# python-magic
+# python-pptx
+# openpyxl
+spacy
+pypdf
+pdfplumber
+docx2txt
+chainlit
+black
+flake8
+isort

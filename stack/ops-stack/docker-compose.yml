@@ -1,0 +1,110 @@
+name: ${HOMELAB_NAME}-ops-stack
+
+services:
+
+  # https://docs.portainer.io/start/install-ce/server/docker/linux
+  # https://github.com/portainer/portainer/issues/6117
+  portainer:
+    image: docker.io/portainer/portainer-ce:2.20.3
+    container_name: ${HOMELAB_NAME}-portainer
+    restart: always
+    privileged: true
+    volumes:
+      - /srv/portainer/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - network-reverse-proxy
+
+  # Initial Setup: username=admin, password=admin
+  # https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/gitlab/#configure-gitlab-authentication-client-using-the-grafana-configuration-file
+  grafana:
+    image: docker.io/grafana/grafana
+    container_name: ${HOMELAB_NAME}-grafana
+    restart: always
+    environment:
+      GF_SERVER_ROOT_URL: http://${HOST_IP}/grafana/
+      # GF_SERVER_ROOT_URL: http://localhost/grafana/
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+      GF_USERS_DEFAULT_THEME: light
+      DS_PROMETHEUS: ${HOMELAB_NAME}-prometheus
+      GF_AUTH_GITLAB_CLIENT_ID: ${GITLAB_CLIENT_ID}
+      GF_AUTH_GITLAB_CLIENT_SECRET: ${GITLAB_CLIENT_SECRET}
+      GF_AUTH_GITLAB_ENABLED: true
+      GF_AUTH_GITLAB_USE_REFRESH_TOKEN: true
+      GF_AUTH_GITLAB_AUTH_URL: ${GITLAB_HOST}/oauth/authorize
+      GF_AUTH_GITLAB_TOKEN_URL: ${GITLAB_HOST}/oauth/token
+      GF_AUTH_GITLAB_API_URL: ${GITLAB_HOST}/api/v4
+    volumes:
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./grafana/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - network-reverse-proxy
+      - network-grafana
+    depends_on:
+      - prometheus
+
+  prometheus:
+    image: docker.io/prom/prometheus
+    container_name: ${HOMELAB_NAME}-prometheus
+    restart: always
+    command: "--config.file=/etc/prometheus/prometheus.yaml"
+    volumes:
+      - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
+      - volume-prometheus:/prometheus
+    networks:
+      - network-grafana
+      - network-prometheus
+    depends_on:
+      - nginx-exporter
+      - node-exporter
+      - cadvisor
+
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:1.3.0
+    container_name: ${HOMELAB_NAME}-nginx-exporter
+    restart: always
+    command:
+      - --nginx.scrape-uri=http://${HOMELAB_NAME}-nginx:8080/stub_status
+    networks:
+      - network-prometheus
+      - network-reverse-proxy
+
+  node-exporter:
+    image: docker.io/prom/node-exporter:latest
+    container_name: ${HOMELAB_NAME}-node-exporter
+    restart: always
+    command:
+      - "--path.rootfs=/host"
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - network-prometheus
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: ${HOMELAB_NAME}-cadvisor
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - network-prometheus
+
+networks:
+  network-reverse-proxy:
+    name: ${HOMELAB_NAME}-network-reverse-proxy
+    external: true
+  network-grafana:
+    name: ${HOMELAB_NAME}-network-grafana
+  network-prometheus:
+    name: ${HOMELAB_NAME}-network-prometheus
+
+volumes:
+  volume-prometheus:
+    name: ${HOMELAB_NAME}-volume-prometheus
