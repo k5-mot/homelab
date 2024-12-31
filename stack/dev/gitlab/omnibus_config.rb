@@ -3,11 +3,11 @@
 # https://qiita.com/KO_YAmajun/items/1a511a3378a67358bb04
 # https://qiita.com/KO_YAmajun/items/b4e894f72697348e3beb
 # roles ['monitoring_role']
-external_url 'http://192.168.11.31/gitlab'
+external_url 'http://192.168.11.30/gitlab'
 # external_url 'http://192.168.11.2:30080'
 # gitlab_rails['initial_root_password'] = 'root'
 gitlab_rails['time_zone'] = 'Tokyo'
-gitlab_rails['gitlab_shell_ssh_port'] = 30022
+# gitlab_rails['gitlab_shell_ssh_port'] = 2222
 postgresql['enable'] = true
 # [OPTION] HTTPS settings
 # nginx['listen_port'] = 80
@@ -82,7 +82,7 @@ prometheus['listen_address'] = '0.0.0.0:9090'
 # }
 # nginx['enable'] = true
 # nginx['enable'] = false
-grafana['enable'] = false
+# grafana['enable'] = false
 
 # alertmanager['enable'] = false
 

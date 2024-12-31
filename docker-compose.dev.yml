@@ -20,9 +20,16 @@ services:
       - network-gitlab
     labels:
       - traefik.enable=true
-      - traefik.docker.network=network-traefik
-      - traefik.http.routers.gitlab.rule=PathPrefix(`/gitlab`)
-      - traefik.http.routers.gitlab.entrypoints=web
+      # - traefik.docker.network=network-traefik
+      - traefik.http.routers.gitlab-http.rule=PathPrefix(`/gitlab`)
+      - traefik.http.routers.gitlab-http.entrypoints=web
+      - traefik.http.routers.gitlab-http.service=gitlab-http-svc
+      - traefik.http.services.gitlab-http-svc.loadbalancer.server.port=80
+      - traefik.tcp.routers.gitlab-ssh.rule=HostSNI(`*`)
+      - traefik.tcp.routers.gitlab-ssh.entrypoints=ssh
+      - traefik.tcp.routers.gitlab-ssh.service=gitlab-ssh-svc
+      - traefik.tcp.services.gitlab-ssh-svc.loadbalancer.server.port=22
+
 
   # https://docs.gitlab.com/runner/install/docker.html
   gitlab-runner:
@@ -39,32 +46,43 @@ services:
     networks:
       - network-gitlab
 
-  # portainer:
-  #   image: portainer/portainer-ce:linux-arm64-2.17.0-alpine
-  #   deploy:
-  #     replicas: 1
-  #     placement:
-  #       constraints: [node.role == manager]
-  #     restart_policy:
-  #       condition: on-failure
-  #       delay: 30s
-  #       max_attempts: 3
-  #     labels:
-  #       - traefik.enable=true
-  #       - traefik.docker.network=traefik_public
-  #       - "traefik.http.routers.portainer.tls=true"
-  #       - "traefik.http.routers.portainer.rule=PathPrefix(`/portainer`)"
-  #       #- "traefik.http.middlewares.portainer.replacepath.path=/"
-  #       - "traefik.http.middlewares.portainer.stripprefix.prefixes=/portainer"
-  #       #- "traefik.http.middlewares.portainer.stripprefix.forceSlash=false"
-  #       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+  # https://docs.portainer.io/start/install-ce/server/docker/linux
+  portainer:
+    image: docker.io/portainer/portainer-ce:2.21.5
+    container_name: ${STACK_PREFIX}-portainer
+    command: -H unix:///var/run/docker.sock
+    restart: always
+    ports:
+      - 9000:9000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - volume-portainer:/data
+    networks:
+      - network-traefik
+    labels:
+      - traefik.enable=true
+      # - traefik.docker.network=network-traefik
+      # Frontend
+      - traefik.http.routers.portainer.rule=PathPrefix(`/portainer`)
+      - traefik.http.routers.portainer.entrypoints=web
+      # - traefik.http.routers.portainer.tls.certresolver=leresolver
+      - traefik.http.routers.portainer.service=portainer-svc
+      - traefik.http.services.portainer-svc.loadbalancer.server.port=9000
+      # - traefik.http.routers.portainer.middlewares=portainer-sp
+      # - traefik.http.middlewares.portainer-sp.stripprefix.prefixes=/portainer
+      # - traefik.http.middlewares.portainer-rp.replacepath.path=/
+      # Edge
+      - traefik.http.routers.edge.rule=PathPrefix(`/edge`)
+      - traefik.http.routers.edge.entrypoints=web
+      # # - traefik.http.routers.edge.tls.certresolver=leresolver
+      - traefik.http.routers.edge.service=edge-svc
+      - traefik.http.services.edge-svc.loadbalancer.server.port=8000
 
   # https://docs.kroki.io/kroki/setup/use-docker-or-podman/#_run_multiple_kroki_containers_together
   kroki:
     image: docker.io/yuzutech/kroki
     container_name: ${STACK_PREFIX}-kroki
-    ports:
-      - 8000:8000
+    restart: unless-stopped
     environment:
       - KROKI_MERMAID_HOST=kroki-mermaid
       - KROKI_BPMN_HOST=kroki-bpmn
@@ -79,30 +97,32 @@ services:
       - kroki-excalidraw
     labels:
       - traefik.enable=true
-      - traefik.docker.network=network-traefik
+      # - traefik.docker.network=network-traefik
       - traefik.http.routers.kroki.rule=PathPrefix(`/kroki`)
       - traefik.http.routers.kroki.entrypoints=web
       - traefik.http.routers.kroki.service=kroki-svc
-      - traefik.http.routers.kroki.middlewares=kroki-stripprefix
       - traefik.http.services.kroki-svc.loadbalancer.server.port=8000
-      - traefik.http.middlewares.kroki-stripprefix.stripprefix.prefixes=/kroki
-
+      - traefik.http.routers.kroki.middlewares=kroki-sp
+      - traefik.http.middlewares.kroki-sp.stripPrefix.prefixes=/kroki
 
   kroki-mermaid:
     image: docker.io/yuzutech/kroki-mermaid
     container_name: ${STACK_PREFIX}-kroki-mermaid
+    restart: unless-stopped
     networks:
       - network-kroki
 
   kroki-bpmn:
     image: docker.io/yuzutech/kroki-bpmn
     container_name: ${STACK_PREFIX}-kroki-bpmn
+    restart: unless-stopped
     networks:
       - network-kroki
 
   kroki-excalidraw:
     image: docker.io/yuzutech/kroki-excalidraw
     container_name: ${STACK_PREFIX}-kroki-excalidraw
+    restart: unless-stopped
     networks:
       - network-kroki
 
@@ -344,6 +364,8 @@ services:
 
 networks:
   network-traefik:
+    name: ${STACK_PREFIX}-traefik
+    external: true
   network-gitlab:
     name: ${STACK_PREFIX}-network-gitlab
   network-kroki:
@@ -358,7 +380,6 @@ networks:
     name: ${STACK_PREFIX}-network-knowledge
   network-nextcloud:
     name: ${STACK_PREFIX}-network-nextcloud
-
 
 
 volumes:
@@ -384,3 +405,5 @@ volumes:
     name: ${STACK_PREFIX}-volume-gitlab-log
   volume-gitlab-data:
     name: ${STACK_PREFIX}-volume-gitlab-data
+  volume-portainer:
+    name: ${STACK_PREFIX}-volume-portainer
