@@ -16,7 +16,8 @@ services:
       - volume-gitlab-data:/var/opt/gitlab
       - ./stack/dev/gitlab/omnibus_config.rb:/etc/gitlab/omnibus_config.rb
     networks:
-      - network-traefik
+      - shared
+      - default
       - network-gitlab
     labels:
       - traefik.enable=true
@@ -58,25 +59,26 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - volume-portainer:/data
     networks:
-      - network-traefik
+      - shared
+      - default
     labels:
       - traefik.enable=true
       # - traefik.docker.network=network-traefik
       # Frontend
-      - traefik.http.routers.portainer.rule=PathPrefix(`/portainer`)
+      - traefik.http.routers.portainer.rule=PathPrefix(`/portainer{regex:$$|/.*}`)
       - traefik.http.routers.portainer.entrypoints=web
       # - traefik.http.routers.portainer.tls.certresolver=leresolver
       - traefik.http.routers.portainer.service=portainer-svc
       - traefik.http.services.portainer-svc.loadbalancer.server.port=9000
-      # - traefik.http.routers.portainer.middlewares=portainer-sp
-      # - traefik.http.middlewares.portainer-sp.stripprefix.prefixes=/portainer
+      - traefik.http.routers.portainer.middlewares=portainer-sp
+      - traefik.http.middlewares.portainer-sp.stripprefix.prefixes=/portainer
       # - traefik.http.middlewares.portainer-rp.replacepath.path=/
       # Edge
-      - traefik.http.routers.edge.rule=PathPrefix(`/edge`)
-      - traefik.http.routers.edge.entrypoints=web
-      # # - traefik.http.routers.edge.tls.certresolver=leresolver
-      - traefik.http.routers.edge.service=edge-svc
-      - traefik.http.services.edge-svc.loadbalancer.server.port=8000
+      # - traefik.http.routers.edge.rule=PathPrefix(`/edge`)
+      # - traefik.http.routers.edge.entrypoints=web
+      # # # - traefik.http.routers.edge.tls.certresolver=leresolver
+      # - traefik.http.routers.edge.service=edge-svc
+      # - traefik.http.services.edge-svc.loadbalancer.server.port=8000
 
   # https://docs.kroki.io/kroki/setup/use-docker-or-podman/#_run_multiple_kroki_containers_together
   kroki:
@@ -88,7 +90,8 @@ services:
       - KROKI_BPMN_HOST=kroki-bpmn
       - KROKI_EXCALIDRAW_HOST=kroki-excalidraw
     networks:
-      - network-traefik
+      - shared
+      - default
       - network-kroki
       - network-gitlab
     depends_on:
@@ -363,8 +366,7 @@ services:
 
 
 networks:
-  network-traefik:
-    name: ${STACK_PREFIX}-traefik
+  shared:
     external: true
   network-gitlab:
     name: ${STACK_PREFIX}-network-gitlab
