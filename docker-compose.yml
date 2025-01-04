@@ -2,22 +2,23 @@ name: ${STACK_PREFIX}-base-stack
 
 services:
 
-  # pihole:
-  #   image: pihole/pihole
-  #   network_mode: host
-  #   ports:
-  #     - 8100:8100
-  #   environment:
-  #     TZ: 'Asia/Tokyo'
-  #     WEBPASSWORD: p@ssw0rd
-  #     FTLCONF_LOCAL_IPV4: 192.168.11.30
-  #     WEB_PORT: 8100
-  #   volumes:
-  #     - './etc-pihole:/etc/pihole'
-  #     - './etc-dnsmasq.d:/etc/dnsmasq.d'
-  #   cap_add:
-  #     - NET_ADMIN
-  #   restart: unless-stopped
+  pihole:
+    image: pihole/pihole
+    container_name: ${STACK_PREFIX}-pihole
+    network_mode: host
+    ports:
+      - 8100:8100
+    environment:
+      TZ: 'Asia/Tokyo'
+      WEBPASSWORD: p@ssw0rd
+      FTLCONF_LOCAL_IPV4: 192.168.11.30
+      WEB_PORT: 8100
+    volumes:
+      - './etc-pihole:/etc/pihole'
+      - './etc-dnsmasq.d:/etc/dnsmasq.d'
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
 
   # https://doc.traefik.io/traefik/user-guides/docker-compose/basic-example/
   traefik:

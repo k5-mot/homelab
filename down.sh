@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 items=(
+    "docker-compose.llm.yml"
+    "docker-compose.ops.yml"
     "docker-compose.dev.yml"
     "docker-compose.yml"
 )

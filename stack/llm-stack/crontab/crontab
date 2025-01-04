@@ -1,3 +1,0 @@
-# 改行コードは"LF"にすること
-0 0 * * * /bin/bash -l -c 'echo `date` >> /var/log/cron.log' 2>&1
-0 0 * * * /usr/local/bin/python3 /home/vscode/crontab/job.py >> /var/log/cron.log 2>&1

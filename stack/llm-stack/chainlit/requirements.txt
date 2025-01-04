@@ -1,4 +1,0 @@
-chainlit
-langchain
-langchain-core
-langserve

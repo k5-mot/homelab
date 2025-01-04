@@ -47,39 +47,6 @@ services:
     networks:
       - network-gitlab
 
-  # https://docs.portainer.io/start/install-ce/server/docker/linux
-  portainer:
-    image: docker.io/portainer/portainer-ce:2.21.5
-    container_name: ${STACK_PREFIX}-portainer
-    command: -H unix:///var/run/docker.sock
-    restart: always
-    ports:
-      - 9000:9000
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - volume-portainer:/data
-    networks:
-      - shared
-      - default
-    labels:
-      - traefik.enable=true
-      # - traefik.docker.network=network-traefik
-      # Frontend
-      - traefik.http.routers.portainer.rule=PathPrefix(`/portainer{regex:$$|/.*}`)
-      - traefik.http.routers.portainer.entrypoints=web
-      # - traefik.http.routers.portainer.tls.certresolver=leresolver
-      - traefik.http.routers.portainer.service=portainer-svc
-      - traefik.http.services.portainer-svc.loadbalancer.server.port=9000
-      - traefik.http.routers.portainer.middlewares=portainer-sp
-      - traefik.http.middlewares.portainer-sp.stripprefix.prefixes=/portainer
-      # - traefik.http.middlewares.portainer-rp.replacepath.path=/
-      # Edge
-      # - traefik.http.routers.edge.rule=PathPrefix(`/edge`)
-      # - traefik.http.routers.edge.entrypoints=web
-      # # # - traefik.http.routers.edge.tls.certresolver=leresolver
-      # - traefik.http.routers.edge.service=edge-svc
-      # - traefik.http.services.edge-svc.loadbalancer.server.port=8000
-
   # https://docs.kroki.io/kroki/setup/use-docker-or-podman/#_run_multiple_kroki_containers_together
   kroki:
     image: docker.io/yuzutech/kroki
