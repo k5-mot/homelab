@@ -71,21 +71,21 @@ services:
       - traefik.http.routers.unstructured.middlewares=unstructured-sp
       - traefik.http.middlewares.unstructured-sp.stripPrefix.prefixes=/unstructured
 
-  crontab:
-    build:
-      context: ./stack/llm/crontab
-      dockerfile: ./Dockerfile
-      args:
-        - HTTP_PROXY=${PROXY_ADDRESS}
-        - HTTPS_PROXY=${PROXY_ADDRESS}
-    container_name: ${STACK_PREFIX}-crontab
-    restart: always
-    volumes:
-      - ./stack/llm/docs:/docs:ro
-      - ./stack/llm/crontab:/workspaces:cached
-    networks:
-      - shared
-      - default
+  # crontab:
+  #   build:
+  #     context: ./stack/llm/crontab
+  #     dockerfile: ./Dockerfile
+  #     args:
+  #       - HTTP_PROXY=${PROXY_ADDRESS}
+  #       - HTTPS_PROXY=${PROXY_ADDRESS}
+  #   container_name: ${STACK_PREFIX}-crontab
+  #   restart: always
+  #   volumes:
+  #     - ./stack/llm/docs:/docs:ro
+  #     - ./stack/llm/crontab:/workspaces:cached
+  #   networks:
+  #     - shared
+  #     - default
 
   langserve:
     build:
