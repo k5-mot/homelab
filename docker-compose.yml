@@ -14,8 +14,8 @@ services:
       FTLCONF_LOCAL_IPV4: 192.168.11.30
       WEB_PORT: 8100
     volumes:
-      - './etc-pihole:/etc/pihole'
-      - './etc-dnsmasq.d:/etc/dnsmasq.d'
+      - /srv/pihole/config:/etc/pihole
+      - /srv/pihole/dnsmasq:/etc/dnsmasq.d
     cap_add:
       - NET_ADMIN
     restart: unless-stopped
