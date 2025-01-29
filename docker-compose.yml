@@ -2,27 +2,9 @@ name: ${STACK_PREFIX}-base-stack
 
 services:
 
-  pihole:
-    image: pihole/pihole
-    container_name: ${STACK_PREFIX}-pihole
-    network_mode: host
-    ports:
-      - 8100:8100
-    environment:
-      TZ: 'Asia/Tokyo'
-      WEBPASSWORD: p@ssw0rd
-      FTLCONF_LOCAL_IPV4: 192.168.11.30
-      WEB_PORT: 8100
-    volumes:
-      - /srv/pihole/config:/etc/pihole
-      - /srv/pihole/dnsmasq:/etc/dnsmasq.d
-    cap_add:
-      - NET_ADMIN
-    restart: unless-stopped
-
   # https://doc.traefik.io/traefik/user-guides/docker-compose/basic-example/
   traefik:
-    image: traefik:v3.2
+    image: docker.io/library/traefik:v3.3.2
     container_name: ${STACK_PREFIX}-traefik
     restart: unless-stopped
     command:
@@ -49,10 +31,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - shared
-      - default
 
   whoami:
-    image: traefik/whoami
+    image: docker.io/traefik/whoami:latest
     container_name: ${STACK_PREFIX}-whoami
     restart: unless-stopped
     labels:
@@ -64,7 +45,24 @@ services:
       - traefik.http.services.whoami-svc.loadbalancer.server.port=80
     networks:
       - shared
-      - default
+
+  nginx:
+    image: docker.io/library/nginx:latest
+    container_name: ${STACK_PREFIX}-nginx
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.nginx.rule=PathPrefix(`/nginx`)
+      - traefik.http.routers.nginx.entrypoints=web
+      - traefik.http.routers.nginx.service=nginx-svc
+      - traefik.http.services.nginx-svc.loadbalancer.server.port=80
+    volumes:
+      - ./stack/base/nginx/public:/usr/share/nginx/html/nginx:rw
+      - ./stack/base/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # - ./stack/base/nginx/certificate/:/etc/certificate/:rw
+    networks:
+      - shared
 
 networks:
   shared:

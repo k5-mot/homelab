@@ -2,9 +2,9 @@
 
 items=(
     "docker-compose.yml"
-    # "docker-compose.dev.yml"
+    "docker-compose.dev.yml"
     "docker-compose.ops.yml"
-    "docker-compose.llm.yml"
+    #"docker-compose.llm.yml"
 )
 
 docker network create shared

@@ -17,11 +17,10 @@ services:
       - ./stack/dev/gitlab/omnibus_config.rb:/etc/gitlab/omnibus_config.rb
     networks:
       - shared
-      - default
       - network-gitlab
     labels:
       - traefik.enable=true
-      # - traefik.docker.network=network-traefik
+      - traefik.docker.network=shared
       - traefik.http.routers.gitlab-http.rule=PathPrefix(`/gitlab`)
       - traefik.http.routers.gitlab-http.entrypoints=web
       - traefik.http.routers.gitlab-http.service=gitlab-http-svc
@@ -58,7 +57,6 @@ services:
       - KROKI_EXCALIDRAW_HOST=kroki-excalidraw
     networks:
       - shared
-      - default
       - network-kroki
       - network-gitlab
     depends_on:
@@ -67,7 +65,7 @@ services:
       - kroki-excalidraw
     labels:
       - traefik.enable=true
-      # - traefik.docker.network=network-traefik
+      - traefik.docker.network=shared
       - traefik.http.routers.kroki.rule=PathPrefix(`/kroki`)
       - traefik.http.routers.kroki.entrypoints=web
       - traefik.http.routers.kroki.service=kroki-svc
@@ -97,18 +95,31 @@ services:
       - network-kroki
 
   # https://github.com/jenkinsci/docker/blob/master/README.md
-  # jenkins:
-  #   image: docker.io/jenkins/jenkins:lts
-  #   container_name: ${STACK_PREFIX}-jenkins
-  #   environment:
-  #     - "JENKINS_OPTS=--prefix=/jenkins"
-  #     - HTTP_PROXY=${PROXY_ADDRESS}
-  #     - HTTPS_PROXY=${PROXY_ADDRESS}
-  #   volumes:
-  #     - volume-jenkins:/var/jenkins_home
-  #   networks:
-  #     - network-traefik
-  #     - network-jenkins
+  jenkins:
+    image: docker.io/jenkins/jenkins:lts
+    container_name: ${STACK_PREFIX}-jenkins
+    # ports:
+    #   - 8081:8080
+    #   - 50000:50000
+    environment:
+      # - VIRTUAL_PORT=8080
+      - JENKINS_OPTS="--prefix=/jenkins"
+      # - HTTP_PROXY=${PROXY_ADDRESS}
+      # - HTTPS_PROXY=${PROXY_ADDRESS}
+    volumes:
+      - volume-jenkins:/var/jenkins_home
+    networks:
+      - shared
+      - network-jenkins
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.jenkins.rule=PathPrefix(`/jenkins`)
+      - traefik.http.routers.jenkins.entrypoints=web
+      - traefik.http.routers.jenkins.service=jenkins-svc
+      - traefik.http.services.jenkins-svc.loadbalancer.server.port=8080
+      # - traefik.http.routers.jenkins.middlewares=jenkins-sp
+      # - traefik.http.middlewares.jenkins-sp.stripPrefix.prefixes=/jenkins
 
   # jenkins-ssh:
   #   image: docker.io/jenkins/ssh-agent:latest
@@ -220,33 +231,42 @@ services:
   #     - dockerproxy
 
   # https://coder.com/docs/code-server/latest/install#docker
-  # coder:
-  #   image: lscr.io/linuxserver/code-server:latest
-  #   container_name: ${STACK_PREFIX}-coder
-  #   restart: always
-  #   privileged: true
-  #   environment:
-  #     - UID=1000
-  #     - GID=1000
-  #     - TZ=Asia/Tokyo
-  #     - PASSWORD= #optional
-  #     - HASHED_PASSWORD= #optional
-  #     - SUDO_PASSWORD= #optional
-  #     - SUDO_PASSWORD_HASH= #optional
-  #     - PROXY_DOMAIN= #optional
-  #     - HTTP_PROXY=${PROXY_ADDRESS}
-  #     - HTTPS_PROXY=${PROXY_ADDRESS}
-  #   networks:
-  #     - network-traefik
-  #   volumes:
-  #     - /srv/coder/.local:/home/coder/.local
-  #     - /srv/coder/.config:/home/coder/.config
-  #     - /srv/coder/project:/home/coder/project
-  #   healthcheck:
-  #     test: [ "CMD", "curl", "-f", "http://localhost:8443/healthz" ]
-  #     interval: 1s
-  #     timeout: 10s
-  #     retries: 5
+  coder:
+    image: lscr.io/linuxserver/code-server:latest
+    container_name: ${STACK_PREFIX}-coder
+    restart: always
+    privileged: true
+    environment:
+      - UID=1000
+      - GID=1000
+      - TZ=Asia/Tokyo
+      - PASSWORD= #optional
+      - HASHED_PASSWORD= #optional
+      - SUDO_PASSWORD= #optional
+      - SUDO_PASSWORD_HASH= #optional
+      - PROXY_DOMAIN= #optional
+      - HTTP_PROXY=${PROXY_ADDRESS}
+      - HTTPS_PROXY=${PROXY_ADDRESS}
+    networks:
+      - shared
+    volumes:
+      - /srv/coder/.local:/home/coder/.local
+      - /srv/coder/.config:/home/coder/.config
+      - /srv/coder/project:/home/coder/project
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8443/healthz" ]
+      interval: 1s
+      timeout: 10s
+      retries: 5
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.coder.rule=PathPrefix(`/coder`)
+      - traefik.http.routers.coder.entrypoints=web
+      - traefik.http.routers.coder.service=coder-svc
+      - traefik.http.services.coder-svc.loadbalancer.server.port=8443
+      - traefik.http.routers.coder.middlewares=coder-sp
+      - traefik.http.middlewares.coder-sp.stripPrefix.prefixes=/coder
 
   # https://github.com/support-project/docker-knowledge/blob/master/docker-compose.yml
   # knowledge:
