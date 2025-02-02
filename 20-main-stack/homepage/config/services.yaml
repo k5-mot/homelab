@@ -2,210 +2,166 @@
 # For configuration options and examples, please see:
 # https://gethomepage.dev/latest/configs/services
 
-- 開発者向けサービス:
-  - Homepage:
-      href: http://192.168.11.2/
-      icon: homepage.png
-      description: ほーむ
+- Base:
+  - traefik:
+      href: http://192.168.11.30:8080/
+      icon: traefik.png
+      description: Traefik, The Cloud Native Edge Router
       server: my-docker
-      container: homelab-homepage
-  - GitLab:
-      href: http://192.168.11.2/gitlab/
-      icon: gitlab.svg
-      description: ぎっと
+      container: homelab-traefik
+  - whoami:
+      href: http://192.168.11.30/whoami/
+      icon: traefik.png
+      description: Tiny Go webserver that prints OS information and HTTP request to output
       server: my-docker
-      container: homelab-gitlab
-  - Kroki!:
-      href: http://192.168.11.2/kroki/
-      icon: diagrams-net.svg
-      description: 作図
-      server: my-docker
-      container: homelab-kroki
-  - Redmine:
-      href: http://192.168.11.2/redmine/
-      icon: si-redmine-#B32024
-      description: ちけっと
-      server: my-docker
-      container: homelab-redmine
-  - Code-Server:
-      href: http://192.168.11.2/coder/
-      icon: code-server.png
-      description: かいはつかんきょう
-      server: my-docker
-      container: homelab-coder
-  - Jenkins:
-      href: http://192.168.11.2/jenkins/
-      icon: jenkins.png
-      description: CICD
-      server: my-docker
-      container: homelab-jenkins
-  - Knowledge:
-      href: http://192.168.11.2/knowledge/
-      # icon: mdi-crosshairs-question
-      icon: https://avatars.githubusercontent.com/u/10343544?s=200&v=4
-      description: なれっじ
-      server: my-docker
-      container: homelab-knowledge
-  - Nextcloud:
-      href: http://192.168.11.2/nextcloud/
-      icon: nextcloud.svg
-      description: すとれーじ
-      server: my-docker
-      container: homelab-nextcloud
-  - Miniflux:
-      href: http://192.168.11.2/miniflux/
-
-      icon: miniflux.svg
-      description: RSS
-      server: my-docker
-      container: homelab-miniflux
-
-- 管理者向けサービス:
-  - Cockpit:
-      href: http://192.168.11.2:9090
-      icon: cockpit.png
-      description: サーバ監視
-      ping: localhost
-  - Nginx:
-      href: http://192.168.11.2/nginx/
-      icon: nginx.svg
-      description: さーば、りばぷろ
+      container: homelab-whoami
+  - nginx:
+      href: http://192.168.11.30/nginx/
+      icon: nginx.png
+      description: the world's most popular Web Server, high performance Load Balancer, Reverse Proxy, API Gateway and Content Cache.
       server: my-docker
       container: homelab-nginx
-  - phpLDAPadmin:
-      href: http://192.168.11.2/openldap/
-      icon: phpldapadmin.png
-      description: えるだっぷのUI
-      server: my-docker
-      container: homelab-phpldapadmin
-  - OpenLDAP:
-      icon: phpldapadmin.png
-      description: えるだっぷ
-      server: my-docker
-      container: homelab-openldap
-  - Portainer:
-      href: http://192.168.11.2/portainer/
-      icon: portainer.svg
-      description: どっかー
-      server: my-docker
-      container: homelab-portainer
-  - Grafana:
-      href: http://192.168.11.2/grafana/
-      icon: grafana.svg
-      description: さーば監視
-      server: my-docker
-      container: homelab-grafana
-  - Prometheus:
+
+- Metrics:
+  - prometheus:
+      href: http://192.168.11.30/prometheus/
       icon: prometheus.svg
-      description: めとりくす
+      description: a systems and service monitoring system.
       server: my-docker
       container: homelab-prometheus
-  - Nginx Exporter:
+  - nginx-exporter:
+      href: http://192.168.11.30/nginx-exporter/
       icon: prometheus.svg
-      description: めとりくす収集
+      description: NGINX Prometheus Exporter for NGINX and NGINX Plus
       server: my-docker
       container: homelab-nginx-exporter
-  - Node Exporter:
+  - node-exporter:
+      href: http://192.168.11.30/node-exporter/
       icon: prometheus.svg
-      description: めとりくす収集
+      description: Prometheus exporter for hardware and OS metrics
       server: my-docker
       container: homelab-node-exporter
   - cAdvisor:
+      href: http://192.168.11.30/cadvisor/
       icon: cadvisor.png
-      description: dockerめとりくす収集
+      description: Analyzes resource usage and performance characteristics of running containers.
       server: my-docker
       container: homelab-cadvisor
+  - dcgm-exporter:
+      href: http://192.168.11.30/dcgm-exporter/
+      icon: nvidia.png
+      description: NVIDIA GPU metrics exporter for Prometheus leveraging DCGM
+      server: my-docker
+      container: homelab-dcgm-exporter
 
-- 実験中のサービス:
-  - Open WebUI:
-      href: http://192.168.11.2:30012/
-      icon: open-webui.png
-      description: AIくんUI (リバプロなし)
+- Main:
+  - Homepage:
+      href: http://192.168.11.30/
+      icon: homepage.png
+      description: A highly customizable homepage (or startpage / application dashboard) with Docker and service API integrations.
       server: my-docker
-      container: homelab-ollama-webui
-  - Ollama:
-      href: http://192.168.11.2:30012/
-      icon: ollama.svg
-      description: AIくん本体 (リバプロなし)
-      server: my-docker
-      container: homelab-ollama
-  - Wiki.js:
-      href: http://192.168.11.2:30010
-      icon: wikijs.png
-      description: なれっじ (リバプロなし)
-      server: my-docker
-      container: homelab-wikijs
-  - PostgreSQL for Wiki.js:
-      icon: postgres.svg
-      description: DB
-      server: my-docker
-      container: homelab-wikijs-db
-  - Docmost:
-      href: http://192.168.11.2:30011
-      icon: https://docmost.com/favicon.ico
-      description: のーとていきんぐ
-      server: my-docker
-      container: homelab-docmost
-  - PostgreSQL for Docmost:
-      icon: postgres.svg
-      description: DB
-      server: my-docker
-      container: homelab-docmost-db
-  - Redis for Docmost:
-      icon: redis.svg
-      description: In-Memory DB
-      server: my-docker
-      container: homelab-docmost-redis
+      container: homelab-homepage
 
-
-- 開発者向けサービス(バックエンド):
-  - GitLab Runner:
+- Git:
+  - GitLab:
+      href: http://192.168.11.30/gitlab/
       icon: gitlab.svg
-      description: ぎっと
+      description: the most comprehensive AI-powered DevSecOps Platform.
+      server: my-docker
+      container: homelab-gitlab
+  - GitLab-Runner:
+      icon: gitlab.svg
+      description: GitLab CI Multi Runner used to fetch and run pipeline jobs with GitLab CI
       server: my-docker
       container: homelab-gitlab-runner
-  - Docker Socket Proxy:
-      icon: docker.svg
-      description: ほーむのDockerAPI用
+  - Kroki:
+      href: http://192.168.11.30/kroki/
+      icon: diagrams-net.svg
+      description: Creates diagrams from textual descriptions!
       server: my-docker
-      container: homelab-dockerproxy
-  - Jenkins SSH Agent:
+      container: homelab-kroki
+  - Kroki-mermaid:
+      icon: diagrams-net.svg
+      description: mermaid
+      server: my-docker
+      container: homelab-kroki-mermaid
+  - Kroki-bpmn:
+      icon: diagrams-net.svg
+      description: bpmn
+      server: my-docker
+      container: homelab-kroki-bpmn
+  - Kroki-excalidraw:
+      icon: diagrams-net.svg
+      description: excalidraw
+      server: my-docker
+      container: homelab-kroki-excalidraw
+  - Kroki-diagramsnet:
+      icon: diagrams-net.svg
+      description: diagramsnet
+      server: my-docker
+      container: homelab-kroki-diagramsnet
+
+- Dev:
+  - coder:
+      href: http://192.168.11.30/coder/
+      icon: code-server.png
+      description: VS Code in the browser
+      server: my-docker
+      container: homelab-coder
+
+- Ops:
+  - Jenkins:
+      href: http://192.168.11.30/jenkins/
       icon: jenkins.png
-      description: CICD
+      description: Jenkins Continuous Integration and Delivery server.
       server: my-docker
-      container: homelab-jenkins-ssh
+      container: homelab-jenkins
+
+- Prj:
+  - Redmine:
+      href: http://192.168.11.30/redmine/
+      icon: si-redmine-#B32024
+      description: Redmine is a flexible project management web application written using Ruby on Rails framework
+      server: my-docker
+      container: homelab-redmine
+  - Knowledge:
+      href: http://192.168.11.30/knowledge/
+      icon: https://avatars.githubusercontent.com/u/10343544?s=200&v=4
+      description: Free Knowledge Base System
+      server: my-docker
+      container: homelab-knowledge
+  - Nextcloud:
+      href: http://192.168.11.30/nextcloud/
+      icon: nextcloud.svg
+      description: A safe home for all your data.
+      server: my-docker
+      container: homelab-nextcloud
   - PostgreSQL for Redmine:
       icon: postgres.svg
-      description: DB
+      # description: DB
       server: my-docker
       container: homelab-redmine-db
   - PostgreSQL for Knowledge:
       icon: postgres.svg
-      description: DB
+      # description: DB
       server: my-docker
       container: homelab-knowledge-db
   - MariaDB for Nextcloud:
       icon: mariadb.svg
-      description: DB
+      # description: DB
       server: my-docker
       container: homelab-nextcloud-db
-  - PostgreSQL for Miniflux:
-      icon: postgres.svg
-      description: DB
+
+- Mon:
+  - Portainer:
+      href: http://192.168.11.30/portainer/
+      icon: portainer.svg
+      description: a lightweight service delivery platform for containerized applications
       server: my-docker
-      container: homelab-miniflux-db
-  - Kroki!-Mermaid:
-      icon: si-mermaid-#ff3670
-      description: 作図
+      container: homelab-portainer
+  - Grafana:
+      href: http://192.168.11.30/grafana/
+      icon: grafana.svg
+      description: Monitor your docker desktop instance from Grafana cloud.
       server: my-docker
-      container: homelab-kroki-mermaid
-  - Kroki!-bpmn:
-      icon: diagrams-net.svg
-      description: 作図
-      server: my-docker
-      container: homelab-kroki-bpmn
-  - Kroki!-excalidraw:
-      icon: excalidraw.svg
-      description: 作図
-      server: my-docker
-      container: homelab-kroki-excalidraw
+      container: homelab-grafana

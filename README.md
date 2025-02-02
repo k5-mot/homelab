@@ -1,8 +1,13 @@
-# :house: Homelab Stacks
+# :house: Homelab
+
+お家サーバで、サービスを運用するときの資材置き場。
 
 ## :file_folder: Folder Structure
 
-- base-stack
+| NAME | DESC | SERVICE |
+| :---:|:---:|:---:|
+|00-base-stack| ||
+- - base-stack
   - Reverse proxy
 - dev-stack
   - Development features
