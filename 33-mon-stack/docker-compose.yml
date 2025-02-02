@@ -1,0 +1,81 @@
+name: ${STACK_PREFIX}-met-stack
+
+services:
+
+  # https://docs.portainer.io/start/install-ce/server/docker/linux
+  # https://github.com/portainer/portainer/issues/6117
+  portainer:
+    image: docker.io/portainer/portainer-ce:2.26.1
+    container_name: ${STACK_PREFIX}-portainer
+    restart: always
+    privileged: true
+    command: "--base-url /portainer -H unix:///var/run/docker.sock"
+    ports:
+      - 9000:9000
+    volumes:
+      - volume-portainer:/data
+      # Docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Podman
+      # - /run/podman/podman.sock:/var/run/docker.sock:ro
+    networks:
+      - shared
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.portainer.rule=PathPrefix(`/portainer/`)
+      - traefik.http.routers.portainer.entrypoints=web
+      - traefik.http.routers.portainer.service=portainer-svc
+      - traefik.http.services.portainer-svc.loadbalancer.server.port=9000
+      - traefik.http.routers.portainer.middlewares=portainer-sp
+      # - traefik.http.routers.portainer.middlewares=portainer-sp,portainer-prefix
+      - traefik.http.middlewares.portainer-sp.stripprefix.prefixes=/portainer
+      # - traefik.http.middlewares.portainer-prefix.addprefix.prefix=/
+
+  # Initial Setup: username=admin, password=admin
+  # https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/gitlab/#configure-gitlab-authentication-client-using-the-grafana-configuration-file
+  grafana:
+    image: docker.io/grafana/grafana
+    container_name: ${STACK_PREFIX}-grafana
+    restart: always
+    environment:
+      GF_SERVER_ROOT_URL: http://${HOST_IP}/grafana/
+      # GF_SERVER_ROOT_URL: http://localhost/grafana/
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+      GF_USERS_DEFAULT_THEME: light
+      DS_PROMETHEUS: ${STACK_PREFIX}-prometheus
+      # GF_AUTH_GITLAB_CLIENT_ID: ${GITLAB_CLIENT_ID}
+      # GF_AUTH_GITLAB_CLIENT_SECRET: ${GITLAB_CLIENT_SECRET}
+      # GF_AUTH_GITLAB_ENABLED: true
+      # GF_AUTH_GITLAB_USE_REFRESH_TOKEN: true
+      # GF_AUTH_GITLAB_AUTH_URL: ${GITLAB_HOST}/oauth/authorize
+      # GF_AUTH_GITLAB_TOKEN_URL: ${GITLAB_HOST}/oauth/token
+      # GF_AUTH_GITLAB_API_URL: ${GITLAB_HOST}/api/v4
+    volumes:
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./grafana/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - shared
+      - network-grafana
+    # depends_on:
+    #   - prometheus
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.grafana.rule=PathPrefix(`/grafana/`)
+      - traefik.http.routers.grafana.entrypoints=web
+      - traefik.http.routers.grafana.service=grafana-svc
+      - traefik.http.services.grafana-svc.loadbalancer.server.port=3000
+      - traefik.http.routers.grafana.middlewares=grafana-sp
+      - traefik.http.middlewares.grafana-sp.stripprefix.prefixes=/grafana
+
+networks:
+  shared:
+    external: true
+  network-grafana:
+    name: ${STACK_PREFIX}-network-grafana
+
+volumes:
+  volume-portainer:
+    name: ${STACK_PREFIX}-volume-portainer

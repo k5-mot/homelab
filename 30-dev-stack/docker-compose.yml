@@ -1,0 +1,51 @@
+name: ${STACK_PREFIX}-dev-stack
+
+services:
+
+  # https://coder.com/docs/code-server/latest/install#docker
+  coder:
+    image: lscr.io/linuxserver/code-server:latest
+    container_name: ${STACK_PREFIX}-coder
+    restart: always
+    privileged: true
+    environment:
+      - UID=1000
+      - GID=1000
+      - TZ=Asia/Tokyo
+      - PASSWORD= #optional
+      - HASHED_PASSWORD= #optional
+      - SUDO_PASSWORD= #optional
+      - SUDO_PASSWORD_HASH= #optional
+      - PROXY_DOMAIN= #optional
+      - HTTP_PROXY=${PROXY_ADDRESS}
+      - HTTPS_PROXY=${PROXY_ADDRESS}
+    networks:
+      - shared
+    volumes:
+      - volume-coder:/home/coder
+      # - /srv/coder/.local:/home/coder/.local
+      # - /srv/coder/.config:/home/coder/.config
+      # - /srv/coder/project:/home/coder/project
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8443/healthz" ]
+      interval: 1s
+      timeout: 10s
+      retries: 5
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.coder.rule=PathPrefix(`/coder/`)
+      - traefik.http.routers.coder.entrypoints=web
+      - traefik.http.routers.coder.service=coder-svc
+      - traefik.http.services.coder-svc.loadbalancer.server.port=8443
+      - traefik.http.routers.coder.middlewares=coder-sp
+      - traefik.http.middlewares.coder-sp.stripPrefix.prefixes=/coder
+
+networks:
+  shared:
+    external: true
+
+
+volumes:
+  volume-coder:
+    name: ${STACK_PREFIX}-volume-coder

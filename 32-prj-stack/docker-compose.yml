@@ -1,0 +1,168 @@
+name: ${STACK_PREFIX}-prj-stack
+
+services:
+
+  # ID:admin PW:admin
+  redmine:
+    image: redmine:latest-revpro
+    build:
+      context: .
+      dockerfile: ./redmine/Dockerfile
+    container_name: ${STACK_PREFIX}-redmine
+    environment:
+      REDMINE_DB_POSTGRES: ${STACK_PREFIX}-redmine-db
+      REDMINE_DB_DATABASE: redmine
+      REDMINE_DB_USERNAME: redmine_user
+      REDMINE_DB_PASSWORD: redmine_pass
+      REDMINE_SECRET_KEY_BASE: supersecretkey
+      REDMINE_DB_PORT: 5432
+    volumes:
+      - volume-redmine:/usr/src/redmine/files
+    networks:
+      - shared
+      - network-redmine
+    depends_on:
+      redmine-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/redmine/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+
+  redmine-db:
+    image: docker.io/postgres:16.3
+    container_name: ${STACK_PREFIX}-redmine-db
+    environment:
+      POSTGRES_DB:       redmine
+      POSTGRES_USER:     redmine_user
+      POSTGRES_PASSWORD: redmine_pass
+    volumes:
+      - volume-redmine-db:/var/lib/postgresql/data
+    networks:
+      - network-redmine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+
+
+  # https://github.com/support-project/docker-knowledge/blob/master/docker-compose.yml
+  knowledge:
+    image: knowledge:latest-revpro
+    build:
+      context: .
+      dockerfile: ./knowledge/Dockerfile
+      args:
+        - HTTP_PROXY=${PROXY_ADDRESS}
+        - HTTPS_PROXY=${PROXY_ADDRESS}
+    container_name: ${STACK_PREFIX}-knowledge
+    restart: always
+    volumes:
+      - ./knowledge/custom_connection.xml:/root/.knowledge/custom_connection.xml
+      - volume-knowledge:/root/.knowledge
+    networks:
+      - shared
+      - network-knowledge
+    depends_on:
+      - knowledge-db
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.knowledge.rule=PathPrefix(`/knowledge/`)
+      - traefik.http.routers.knowledge.entrypoints=web
+      - traefik.http.routers.knowledge.service=knowledge-svc
+      - traefik.http.services.knowledge-svc.loadbalancer.server.port=8443
+      # - traefik.http.routers.knowledge.middlewares=knowledge-sp
+      # - traefik.http.middlewares.knowledge-sp.stripPrefix.prefixes=/knowledge
+
+  knowledge-db:
+    image: docker.io/postgres:9
+    container_name: ${STACK_PREFIX}-knowledge-db
+    restart: always
+    environment:
+      - POSTGRES_USER=knowledge_user
+      - POSTGRES_PASSWORD=knowledge_password
+      - POSTGRES_DB=knowledge_database
+    volumes:
+      # - /srv/knowledge-db/initdb:/docker-entrypoint-initdb.d
+      - volume-knowledge-db:/var/lib/postgresql/data
+    networks:
+      - network-knowledge
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+
+
+  nextcloud:
+    image: docker.io/library/nextcloud:latest
+    container_name: ${STACK_PREFIX}-nextcloud
+    restart: always
+    environment:
+      - MYSQL_HOST=nextcloud-db
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud_user
+      - MYSQL_PASSWORD=nextcloud_password
+    volumes:
+      - volume-nextcloud:/var/www/html
+      - ./nextcloud/setup.sh:/root/setup.sh
+    networks:
+      - shared
+      - network-nextcloud
+    depends_on:
+      - nextcloud-db
+
+  # https://mariadb.org/mariadb-server-docker-official-images-healthcheck-without-mysqladmin/
+  nextcloud-db:
+    image: docker.io/library/mariadb
+    container_name: ${STACK_PREFIX}-nextcloud-db
+    restart: always
+    environment:
+      - MARIADB_DATABASE=nextcloud
+      - MARIADB_ROOT_PASSWORD=nextcloud_root_pw
+      - MARIADB_USER=nextcloud_user
+      - MARIADB_PASSWORD=nextcloud_password
+    volumes:
+      - volume-nextcloud-db:/var/lib/mysql
+    networks:
+      - network-nextcloud
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized" ]
+      start_period: 1m
+      start_interval: 10s
+      interval: 1m
+      timeout: 5s
+      retries: 3
+
+
+networks:
+  shared:
+    external: true
+  network-redmine:
+    name: ${STACK_PREFIX}-network-redmine
+  network-knowledge:
+    name: ${STACK_PREFIX}-network-knowledge
+  network-nextcloud:
+    name: ${STACK_PREFIX}-network-nextcloud
+
+
+volumes:
+  volume-redmine:
+    name: ${STACK_PREFIX}-volume-redmine
+  volume-redmine-db:
+    name: ${STACK_PREFIX}-volume-redmine-db
+  volume-knowledge:
+    name: ${STACK_PREFIX}-volume-knowledge
+  volume-knowledge-db:
+    name: ${STACK_PREFIX}-volume-knowledge-db
+  volume-nextcloud:
+    name: ${STACK_PREFIX}-volume-nextcloud
+  volume-nextcloud-db:
+    name: ${STACK_PREFIX}-volume-nextcloud-db

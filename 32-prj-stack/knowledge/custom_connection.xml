@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<connectionConfig>
+	<name>custom</name>
+	<driverClass>org.postgresql.Driver</driverClass>
+	<URL>jdbc:postgresql://homelab-knowledge-db/knowledge_database</URL>
+	<user>knowledge_user</user>
+	<password>knowledge_password</password>
+	<schema>public</schema>
+	<maxConn>0</maxConn>
+	<autocommit>false</autocommit>
+</connectionConfig>

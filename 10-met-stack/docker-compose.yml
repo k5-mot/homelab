@@ -1,0 +1,164 @@
+name: ${STACK_PREFIX}-met-stack
+
+services:
+
+  prometheus:
+    image: docker.io/prom/prometheus
+    container_name: ${STACK_PREFIX}-prometheus
+    restart: always
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+      - --web.external-url=/prometheus/
+      - --web.route-prefix=/prometheus/
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
+      - volume-prometheus:/prometheus
+    networks:
+      - shared
+      - network-grafana
+    depends_on:
+      - nginx-exporter
+      - node-exporter
+      - cadvisor
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.prometheus.rule=PathPrefix(`/prometheus/`)
+      - traefik.http.routers.prometheus.entrypoints=web
+      - traefik.http.routers.prometheus.service=prometheus-svc
+      - traefik.http.services.prometheus-svc.loadbalancer.server.port=9090
+      # - traefik.http.routers.prometheus.middlewares=prometheus-sp
+      # - traefik.http.middlewares.prometheus-sp.stripprefix.prefixes=/prometheus
+
+  nginx-exporter:
+    image: docker.io/nginx/nginx-prometheus-exporter:1.4.0
+    container_name: ${STACK_PREFIX}-nginx-exporter
+    restart: unless-stopped
+    command:
+      - --nginx.scrape-uri=http://${STACK_PREFIX}-nginx:8080/stub_status
+    networks:
+      - shared
+      - network-grafana
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.nginx-exporter.rule=PathPrefix(`/nginx-exporter/`)
+      - traefik.http.routers.nginx-exporter.entrypoints=web
+      - traefik.http.routers.nginx-exporter.service=nginx-exporter-svc
+      - traefik.http.services.nginx-exporter-svc.loadbalancer.server.port=9113
+      - traefik.http.routers.nginx-exporter.middlewares=nginx-exporter-sp
+      - traefik.http.middlewares.nginx-exporter-sp.stripprefix.prefixes=/nginx-exporter
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    # image: docker.io/prom/node-exporter:latest
+    container_name: ${STACK_PREFIX}-node-exporter
+    command:
+      - --path.rootfs=/host
+    # network_mode: host
+    # pid: host
+    restart: unless-stopped
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - shared
+      - network-grafana
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.node-exporter.rule=PathPrefix(`/node-exporter/`)
+      - traefik.http.routers.node-exporter.entrypoints=web
+      - traefik.http.routers.node-exporter.service=node-exporter-svc
+      - traefik.http.services.node-exporter-svc.loadbalancer.server.port=9100
+      - traefik.http.routers.node-exporter.middlewares=node-exporter-sp
+      - traefik.http.middlewares.node-exporter-sp.stripprefix.prefixes=/node-exporter
+
+  # Docker
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: ${STACK_PREFIX}-cadvisor
+    privileged: true
+    command: --url_base_prefix=/cadvisor
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - shared
+      - network-grafana
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.cadvisor.rule=PathPrefix(`/cadvisor/`)
+      - traefik.http.routers.cadvisor.entrypoints=web
+      - traefik.http.routers.cadvisor.service=cadvisor-svc
+      - traefik.http.services.cadvisor-svc.loadbalancer.server.port=8080
+      # - traefik.http.routers.cadvisor.middlewares=cadvisor-sp
+      # - traefik.http.middlewares.cadvisor-sp.stripprefix.prefixes=/cadvisor
+
+  # Podman
+  # cadvisor:
+  #   image: gcr.io/cadvisor/cadvisor:latest
+  #   container_name: ${STACK_PREFIX}-cadvisor
+  #   privileged: true
+  #   devices:
+  #     - /dev/kmsg
+  #   volumes:
+  #     - /:/rootfs:ro
+  #     - /dev/disk/:/dev/disk:ro
+  #     - /etc/machine-id:/etc/machine-id:ro
+  #     - /sys:/sys:ro
+  #     - /sys/fs/cgroup:/sys/fs/cgroup:ro
+  #     - /var/lib/containers:/var/lib/containers:ro
+  #     - /var/lib/dbus/machine-id:/var/lib/dbus/machine-id:ro
+  #     - /var/run:/var/run:rw
+  #   networks:
+  #     - shared
+  #     - network-grafana
+  #   labels:
+  #     - traefik.enable=true
+  #     - traefik.docker.network=shared
+  #     - traefik.http.routers.cadvisor.rule=PathPrefix(`/cadvisor/`)
+  #     - traefik.http.routers.cadvisor.entrypoints=web
+  #     - traefik.http.routers.cadvisor.service=cadvisor-svc
+  #     - traefik.http.services.cadvisor-svc.loadbalancer.server.port=8080
+  #     - traefik.http.routers.cadvisor.middlewares=cadvisor-sp
+  #     - traefik.http.middlewares.cadvisor-sp.stripprefix.prefixes=/cadvisor
+
+
+  # dcgm_exporter:
+  #   image: nvcr.io/nvidia/k8s/dcgm-exporter:${DCGM_EXPORTER_IMAGE_TAG}
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: all
+  #             capabilities: [ gpu ]
+  #   restart: always
+  #   environment:
+  #     - DCGM_EXPORTER_NO_HOSTNAME=1
+  #   cap_add:
+  #     - SYS_ADMIN
+  #   ports:
+  #     - "${DCGM_EXPORTER_HOST_PORT}:9400"
+  #   networks:
+  #     - gpu_metrics
+
+networks:
+  shared:
+    external: true
+  network-grafana:
+    name: ${STACK_PREFIX}-network-grafana
+
+volumes:
+  volume-prometheus:
+    name: ${STACK_PREFIX}-volume-prometheus
+  volume-portainer:
+    name: ${STACK_PREFIX}-volume-portainer

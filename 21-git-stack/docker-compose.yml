@@ -1,0 +1,132 @@
+name: ${STACK_PREFIX}-git-stack
+
+services:
+
+  # https://docs.gitlab.com/ee/install/docker.html
+  gitlab:
+    image: docker.io/gitlab/gitlab-ee:17.7.0-ee.0
+    container_name: ${STACK_PREFIX}-gitlab
+    restart: always
+    shm_size: 256m
+    environment:
+      GITLAB_OMNIBUS_CONFIG: "from_file('/etc/gitlab/omnibus_config.rb')"
+    volumes:
+      - volume-gitlab-config:/etc/gitlab
+      - volume-gitlab-log:/var/log/gitlab
+      - volume-gitlab-data:/var/opt/gitlab
+      - ./gitlab/omnibus_config.rb:/etc/gitlab/omnibus_config.rb
+    networks:
+      - shared
+      - network-gitlab
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.gitlab-http.rule=PathPrefix(`/gitlab/`)
+      - traefik.http.routers.gitlab-http.entrypoints=web
+      - traefik.http.routers.gitlab-http.service=gitlab-http-svc
+      - traefik.http.services.gitlab-http-svc.loadbalancer.server.port=80
+      - traefik.tcp.routers.gitlab-ssh.rule=HostSNI(`*`)
+      - traefik.tcp.routers.gitlab-ssh.entrypoints=ssh
+      - traefik.tcp.routers.gitlab-ssh.service=gitlab-ssh-svc
+      - traefik.tcp.services.gitlab-ssh-svc.loadbalancer.server.port=22
+
+
+  # https://docs.gitlab.com/runner/install/docker.html
+  gitlab-runner:
+    image: docker.io/gitlab/gitlab-runner:alpine
+    container_name: ${STACK_PREFIX}-gitlab-runner
+    restart: always
+    environment:
+      - HTTP_PROXY=${PROXY_ADDRESS}
+      - HTTPS_PROXY=${PROXY_ADDRESS}
+    volumes:
+      - volume-gitlab-runner-config:/etc/gitlab-runner
+      - volume-gitlab-runner-data:/home/gitlab-runner
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - network-gitlab
+
+  # https://docs.kroki.io/kroki/setup/use-docker-or-podman/#_run_multiple_kroki_containers_together
+  kroki:
+    image: docker.io/yuzutech/kroki
+    container_name: ${STACK_PREFIX}-kroki
+    restart: unless-stopped
+    environment:
+      - KROKI_MERMAID_HOST=kroki-mermaid
+      - KROKI_BPMN_HOST=kroki-bpmn
+      - KROKI_EXCALIDRAW_HOST=kroki-excalidraw
+    networks:
+      - shared
+      - network-kroki
+      - network-gitlab
+    depends_on:
+      - kroki-mermaid
+      - kroki-bpmn
+      - kroki-excalidraw
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.kroki.rule=PathPrefix(`/kroki/`)
+      - traefik.http.routers.kroki.entrypoints=web
+      - traefik.http.routers.kroki.service=kroki-svc
+      - traefik.http.services.kroki-svc.loadbalancer.server.port=8000
+      - traefik.http.routers.kroki.middlewares=kroki-sp
+      - traefik.http.middlewares.kroki-sp.stripPrefix.prefixes=/kroki
+
+  kroki-mermaid:
+    image: docker.io/yuzutech/kroki-mermaid
+    container_name: ${STACK_PREFIX}-kroki-mermaid
+    restart: unless-stopped
+    networks:
+      - network-kroki
+
+  kroki-bpmn:
+    image: docker.io/yuzutech/kroki-bpmn
+    container_name: ${STACK_PREFIX}-kroki-bpmn
+    restart: unless-stopped
+    networks:
+      - network-kroki
+
+  kroki-excalidraw:
+    image: docker.io/yuzutech/kroki-excalidraw
+    container_name: ${STACK_PREFIX}-kroki-excalidraw
+    restart: unless-stopped
+    networks:
+      - network-kroki
+
+  kroki-diagramsnet:
+    image: docker.io/yuzutech/kroki-diagramsnet
+    container_name: ${STACK_PREFIX}-kroki-diagramsnet
+    restart: unless-stopped
+    networks:
+      - shared
+      - network-kroki
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.docker.network=shared
+    #   - traefik.http.routers.kroki-diagramsnet.rule=PathPrefix(`/kroki-diagramsnet/`)
+    #   - traefik.http.routers.kroki-diagramsnet.entrypoints=web
+    #   - traefik.http.routers.kroki-diagramsnet.service=kroki-diagramsnet-svc
+    #   - traefik.http.services.kroki-diagramsnet-svc.loadbalancer.server.port=8005
+
+
+networks:
+  shared:
+    external: true
+  network-gitlab:
+    name: ${STACK_PREFIX}-network-gitlab
+  network-kroki:
+    name: ${STACK_PREFIX}-network-kroki
+
+
+volumes:
+  volume-gitlab-config:
+    name: ${STACK_PREFIX}-volume-gitlab-config
+  volume-gitlab-log:
+    name: ${STACK_PREFIX}-volume-gitlab-log
+  volume-gitlab-data:
+    name: ${STACK_PREFIX}-volume-gitlab-data
+  volume-gitlab-runner-data:
+    name: ${STACK_PREFIX}-volume-gitlab-runner-data
+  volume-gitlab-runner-config:
+    name: ${STACK_PREFIX}-volume-gitlab-runner-config

@@ -39,7 +39,7 @@ services:
     labels:
       - traefik.enable=true
       # - traefik.docker.network=network-traefik
-      - traefik.http.routers.whoami.rule=PathPrefix(`/whoami`)
+      - traefik.http.routers.whoami.rule=PathPrefix(`/whoami/`)
       - traefik.http.routers.whoami.entrypoints=web
       - traefik.http.routers.whoami.service=whoami-svc
       - traefik.http.services.whoami-svc.loadbalancer.server.port=80
@@ -53,14 +53,14 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=shared
-      - traefik.http.routers.nginx.rule=PathPrefix(`/nginx`)
+      - traefik.http.routers.nginx.rule=PathPrefix(`/nginx/`)
       - traefik.http.routers.nginx.entrypoints=web
       - traefik.http.routers.nginx.service=nginx-svc
       - traefik.http.services.nginx-svc.loadbalancer.server.port=80
     volumes:
-      - ./stack/base/nginx/public:/usr/share/nginx/html/nginx:rw
-      - ./stack/base/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      # - ./stack/base/nginx/certificate/:/etc/certificate/:rw
+      - ./nginx/public:/usr/share/nginx/html/nginx:rw
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # - ./nginx/certificate/:/etc/certificate/:rw
     networks:
       - shared
 

@@ -1,0 +1,141 @@
+name: ${STACK_PREFIX}-ops-stack
+
+services:
+
+  # https://docs.portainer.io/start/install-ce/server/docker/linux
+  # https://github.com/portainer/portainer/issues/6117
+  portainer:
+    image: docker.io/portainer/portainer-ce:2.20.3
+    container_name: ${STACK_PREFIX}-portainer
+    restart: always
+    privileged: true
+    volumes:
+      - /srv/portainer/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - shared
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.portainer.rule=PathPrefix(`/portainer`)
+      - traefik.http.routers.portainer.entrypoints=web
+      - traefik.http.routers.portainer.service=portainer-svc
+      - traefik.http.services.portainer-svc.loadbalancer.server.port=9000
+      - traefik.http.routers.portainer.middlewares=portainer-sp
+      - traefik.http.middlewares.portainer-sp.stripprefix.prefixes=/portainer
+
+  # Initial Setup: username=admin, password=admin
+  # https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/gitlab/#configure-gitlab-authentication-client-using-the-grafana-configuration-file
+  grafana:
+    image: docker.io/grafana/grafana
+    container_name: ${STACK_PREFIX}-grafana
+    restart: always
+    environment:
+      GF_SERVER_ROOT_URL: http://${HOST_IP}/grafana/
+      # GF_SERVER_ROOT_URL: http://localhost/grafana/
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+      GF_USERS_DEFAULT_THEME: light
+      DS_PROMETHEUS: ${STACK_PREFIX}-prometheus
+      # GF_AUTH_GITLAB_CLIENT_ID: ${GITLAB_CLIENT_ID}
+      # GF_AUTH_GITLAB_CLIENT_SECRET: ${GITLAB_CLIENT_SECRET}
+      # GF_AUTH_GITLAB_ENABLED: true
+      # GF_AUTH_GITLAB_USE_REFRESH_TOKEN: true
+      # GF_AUTH_GITLAB_AUTH_URL: ${GITLAB_HOST}/oauth/authorize
+      # GF_AUTH_GITLAB_TOKEN_URL: ${GITLAB_HOST}/oauth/token
+      # GF_AUTH_GITLAB_API_URL: ${GITLAB_HOST}/api/v4
+    volumes:
+      - ./stack/ops/grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./stack/ops/grafana/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml
+      - ./stack/ops/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - shared
+      - network-grafana
+    depends_on:
+      - prometheus
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.grafana.rule=PathPrefix(`/grafana`)
+      - traefik.http.routers.grafana.entrypoints=web
+      - traefik.http.routers.grafana.service=grafana-svc
+      - traefik.http.services.grafana-svc.loadbalancer.server.port=3000
+      - traefik.http.routers.grafana.middlewares=grafana-sp
+      - traefik.http.middlewares.grafana-sp.stripprefix.prefixes=/grafana
+
+  prometheus:
+    image: docker.io/prom/prometheus
+    container_name: ${STACK_PREFIX}-prometheus
+    restart: always
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yaml"
+      - "--web.external-url=/prometheus/"
+      - "--web.route-prefix=/prometheus/"
+    ports:
+      - 9090:9090
+    volumes:
+      - ./stack/ops/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
+      - volume-prometheus:/prometheus
+    networks:
+      - shared
+      - network-grafana
+    depends_on:
+      - nginx-exporter
+      - node-exporter
+      - cadvisor
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.prometheus.rule=PathPrefix(`/prometheus`)
+      - traefik.http.routers.prometheus.entrypoints=web
+      - traefik.http.routers.prometheus.service=prometheus-svc
+      - traefik.http.services.prometheus-svc.loadbalancer.server.port=9090
+      # - traefik.http.routers.prometheus.middlewares=prometheus-sp
+      # - traefik.http.middlewares.prometheus-sp.stripprefix.prefixes=/prometheus
+
+  nginx-exporter:
+    image: docker.io/nginx/nginx-prometheus-exporter:1.3.0
+    container_name: ${STACK_PREFIX}-nginx-exporter
+    restart: always
+    command:
+      - --nginx.scrape-uri=http://${STACK_PREFIX}-nginx:8080/stub_status
+    networks:
+     - network-grafana
+
+
+  node-exporter:
+    image: docker.io/prom/node-exporter:latest
+    container_name: ${STACK_PREFIX}-node-exporter
+    restart: always
+    command:
+      - "--path.rootfs=/host"
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - network-grafana
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: ${STACK_PREFIX}-cadvisor
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - network-grafana
+
+networks:
+  shared:
+    external: true
+  network-grafana:
+    name: ${STACK_PREFIX}-network-grafana
+  # network-prometheus:
+  #   name: ${STACK_PREFIX}-network-prometheus
+
+volumes:
+  volume-prometheus:
+    name: ${STACK_PREFIX}-volume-prometheus

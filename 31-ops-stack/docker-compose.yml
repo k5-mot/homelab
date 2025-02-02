@@ -1,0 +1,35 @@
+name: ${STACK_PREFIX}-ops-stack
+
+services:
+
+  # https://github.com/jenkinsci/docker/blob/master/README.md
+  jenkins:
+    image: docker.io/jenkins/jenkins:lts
+    container_name: ${STACK_PREFIX}-jenkins
+    environment:
+      - JENKINS_OPTS="--prefix=/jenkins"
+    volumes:
+      - volume-jenkins:/var/jenkins_home
+    networks:
+      - shared
+      - network-jenkins
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.jenkins.rule=PathPrefix(`/jenkins/`)
+      - traefik.http.routers.jenkins.entrypoints=web
+      - traefik.http.routers.jenkins.service=jenkins-svc
+      - traefik.http.services.jenkins-svc.loadbalancer.server.port=8080
+
+  # ArgoCDとか入れても面白いかも
+
+networks:
+  shared:
+    external: true
+  network-jenkins:
+    name: ${STACK_PREFIX}-network-jenkins
+
+
+volumes:
+  volume-jenkins:
+    name: ${STACK_PREFIX}-volume-jenkins
