@@ -9,17 +9,19 @@ langchain-ollama
 langchain-elasticsearch
 langchain-unstructured
 flashrank
-chromadb
+# chromadb
 ollama
 unstructured-client
 unstructured
+markitdown
+langserve
 # python-magic
 # python-pptx
 # openpyxl
-spacy
-pypdf
-pdfplumber
-docx2txt
+# spacy
+# pypdf
+# pdfplumber
+# docx2txt
 #chainlit
 #black
 #flake8
