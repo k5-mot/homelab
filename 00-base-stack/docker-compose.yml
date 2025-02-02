@@ -8,7 +8,7 @@ services:
     container_name: ${STACK_PREFIX}-traefik
     restart: unless-stopped
     command:
-      - --log.level=DEBUG
+      # - --log.level=DEBUG
       - --api.insecure=true
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
