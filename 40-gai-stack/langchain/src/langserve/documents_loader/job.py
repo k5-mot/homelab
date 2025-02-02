@@ -1,40 +1,35 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import glob
 import mimetypes
 import os
 import re
 import statistics
 from typing import List
-
 import chromadb
 from elasticsearch import Elasticsearch
-from langchain_chroma import Chroma
-from langchain_community.document_loaders import (  # UnstructuredAPIFileLoader,
-    Docx2txtLoader,
-    PDFMinerLoader,
-    PDFPlumberLoader,
-    PyPDFium2Loader,
-    PyPDFLoader,
-    TextLoader,
-    UnstructuredExcelLoader,
-    UnstructuredPDFLoader,
-    UnstructuredPowerPointLoader,
-    UnstructuredWordDocumentLoader,
-)
-from langchain_core.documents import Document
-from langchain_elasticsearch import ElasticsearchStore
-from langchain_ollama import OllamaEmbeddings
-from langchain_unstructured import UnstructuredLoader
-
-from langchain.globals import set_debug, set_verbose
 from langchain.text_splitter import (
     HTMLHeaderTextSplitter,
     MarkdownHeaderTextSplitter,
     RecursiveCharacterTextSplitter,
     SpacyTextSplitter,
 )
+from langchain_community.document_loaders import (  # UnstructuredAPIFileLoader,
+    PyPDFLoader,
+    TextLoader,
+    UnstructuredPDFLoader,
+    PDFPlumberLoader,
+    PyPDFium2Loader,
+    PDFMinerLoader,
+    Docx2txtLoader,
+    UnstructuredWordDocumentLoader,
+    UnstructuredPowerPointLoader,
+    UnstructuredExcelLoader,
+)
+from langchain_core.documents import Document
+from langchain_chroma import Chroma
+from langchain_unstructured import UnstructuredLoader
+from langchain_ollama import OllamaEmbeddings
+from langchain_elasticsearch import ElasticsearchStore
+from langchain.globals import set_debug, set_verbose
 
 set_debug(False)
 set_verbose(False)
