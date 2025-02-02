@@ -165,3 +165,47 @@
       description: Monitor your docker desktop instance from Grafana cloud.
       server: my-docker
       container: homelab-grafana
+
+- Gai:
+  - Ollama:
+      href: http://192.168.11.30/ollama/api/tags
+      icon: ollama.png
+      description: The easiest way to get up and running with large language models.
+      server: my-docker
+      container: homelab-ollama
+  - unstructured:
+      href: http://192.168.11.30/unstructured/
+      icon: https://raw.githubusercontent.com/Unstructured-IO/unstructured/main/img/unstructured_logo.png
+      description: ETL for LLMs
+      server: my-docker
+      container: homelab-unstructured
+  - langserve:
+      href: http://192.168.11.30/langserve/
+      icon: https://avatars.githubusercontent.com/u/126733545?s=200&v=4
+      description: Build context-aware, reasoning applications with LangChain’s flexible abstractions and AI-first toolkits.
+      server: my-docker
+      container: homelab-langserve
+  - chainlit:
+      href: http://192.168.11.30/chainlit/
+      icon: https://avatars.githubusercontent.com/u/128686189?s=200&v=4
+      description: Python framework which allows developers to build scalable Conversational AI or agentic applications.
+      server: my-docker
+      container: homelab-chainlit
+  - chroma:
+      href: http://192.168.11.30/chroma/
+      icon: https://avatars.githubusercontent.com/u/105881770?s=200&v=4
+      description: the AI-native open-source embedding database
+      server: my-docker
+      container: homelab-chroma
+  - elasticsearch:
+      href: http://192.168.11.30/elasticsearch/
+      icon: elasticsearch.png
+      description: Free and Open Source, Distributed, RESTful Search Engine
+      server: my-docker
+      container: homelab-elasticsearch
+  - JupyterHub:
+      href: http://192.168.11.30/jupyterhub/
+      icon: jupyter.png
+      description: Multi-user server for Jupyter notebooks
+      server: my-docker
+      container: homelab-jupyterhub

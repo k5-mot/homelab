@@ -1,54 +1,59 @@
-name: ${HOMELAB_NAME}-llm-stack
+name: ${STACK_PREFIX}-gai-stack
 
 services:
 
-  # nginx:
-  #   image: docker.io/nginx:1.27.1
-  #   container_name: ${HOMELAB_NAME}-nginx
-  #   restart: always
-  #   ports:
-  #     - 80:80
-  #     - 443:443
-  #   env_file:
-  #     - ../base.env
-  #   volumes:
-  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-  #   networks:
-  #     - network-reverse-proxy
-
   # https://github.com/ollama/ollama/blob/main/docs/docker.md
-  ollama:
-    build:
-      context: ./ollama
-      dockerfile: ./Dockerfile
-      args:
-        - HTTP_PROXY=${PROXY_ADDRESS}
-        - HTTPS_PROXY=${PROXY_ADDRESS}
-    container_name: ${HOMELAB_NAME}-ollama
-    restart: unless-stopped
-    volumes:
-      - volume-ollama:/root/.ollama
-      - volume-ollama-build:/workspace
-    networks:
-      - network-reverse-proxy
-      - network-ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
+  # ollama:
+  #   build:
+  #     context: ./ollama
+  #     dockerfile: ./Dockerfile
+  #     args:
+  #       - HTTP_PROXY=${PROXY_ADDRESS}
+  #       - HTTPS_PROXY=${PROXY_ADDRESS}
+  #   container_name: ${STACK_PREFIX}-ollama
+  #   restart: unless-stopped
+  #   volumes:
+  #     - volume-ollama:/root/.ollama
+  #     - volume-ollama-build:/workspace
+  #   networks:
+  #     - shared
+  #     - network-ollama
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: all
+  #             capabilities: [ gpu ]
+  #   labels:
+  #     - traefik.enable=true
+  #     - traefik.docker.network=shared
+  #     - traefik.http.routers.ollama.rule=PathPrefix(`/ollama/`)
+  #     - traefik.http.routers.ollama.entrypoints=web
+  #     - traefik.http.routers.ollama.service=ollama-svc
+  #     - traefik.http.services.ollama-svc.loadbalancer.server.port=11434
+  #     - traefik.http.routers.ollama.middlewares=ollama-sp
+  #     - traefik.http.middlewares.ollama-sp.stripprefix.prefixes=/ollama
 
   # https://github.com/Unstructured-IO/unstructured-api
   unstructured:
     image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
-    container_name: ${HOMELAB_NAME}-unstructured
+    container_name: ${STACK_PREFIX}-unstructured
     restart: unless-stopped
     environment:
       - PORT=9500
     networks:
-      - network-reverse-proxy
+      - shared
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.unstructured.rule=PathPrefix(`/unstructured/`)
+      - traefik.http.routers.unstructured.entrypoints=web
+      - traefik.http.routers.unstructured.service=unstructured-svc
+      - traefik.http.services.unstructured-svc.loadbalancer.server.port=9500
+      - traefik.http.routers.unstructured.middlewares=unstructured-sp
+      - traefik.http.middlewares.unstructured-sp.stripprefix.prefixes=/unstructured
+
 
   crontab:
     build:
@@ -57,13 +62,13 @@ services:
       args:
         - HTTP_PROXY=${PROXY_ADDRESS}
         - HTTPS_PROXY=${PROXY_ADDRESS}
-    container_name: ${HOMELAB_NAME}-crontab
+    container_name: ${STACK_PREFIX}-crontab
     restart: always
     volumes:
       - ./docs:/docs:ro
       - ./:/workspaces:cached
     networks:
-      - network-reverse-proxy
+      - shared
 
   langserve:
     build:
@@ -72,14 +77,23 @@ services:
       args:
         - HTTP_PROXY=${PROXY_ADDRESS}
         - HTTPS_PROXY=${PROXY_ADDRESS}
-    container_name: ${HOMELAB_NAME}-langserve
+    container_name: ${STACK_PREFIX}-langserve
     restart: always
-    ports:
-      - 31000:8000
+    # ports:
+    #   - 31000:8000
     volumes:
       - ./docs:/docs:ro
     networks:
-      - network-reverse-proxy
+      - shared
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.langserve.rule=PathPrefix(`/langserve/`)
+      - traefik.http.routers.langserve.entrypoints=web
+      - traefik.http.routers.langserve.service=langserve-svc
+      - traefik.http.services.langserve-svc.loadbalancer.server.port=8000
+      - traefik.http.routers.langserve.middlewares=langserve-sp
+      - traefik.http.middlewares.langserve-sp.stripprefix.prefixes=/langserve
 
   # https://docs.chainlit.io/authentication/oauth#gitlab
   chainlit:
@@ -89,7 +103,7 @@ services:
       args:
         - HTTP_PROXY=${PROXY_ADDRESS}
         - HTTPS_PROXY=${PROXY_ADDRESS}
-    container_name: ${HOMELAB_NAME}-chainlit
+    container_name: ${STACK_PREFIX}-chainlit
     restart: always
     environment:
       # - OAUTH_GITLAB_CLIENT_ID=""
@@ -100,11 +114,20 @@ services:
     volumes:
       - ./docs:/docs:ro
     networks:
-      - network-reverse-proxy
+      - shared
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.chainlit.rule=PathPrefix(`/chainlit/`)
+      - traefik.http.routers.chainlit.entrypoints=web
+      - traefik.http.routers.chainlit.service=chainlit-svc
+      - traefik.http.services.chainlit-svc.loadbalancer.server.port=8000
+      # - traefik.http.routers.chainlit.middlewares=chainlit-sp
+      # - traefik.http.middlewares.chainlit-sp.stripprefix.prefixes=/chainlit
 
   chroma:
     image: chromadb/chroma:0.5.11
-    container_name: ${HOMELAB_NAME}-chroma
+    container_name: ${STACK_PREFIX}-chroma
     restart: always
     environment:
       - IS_PERSISTENT=TRUE
@@ -113,11 +136,20 @@ services:
     volumes:
       - volume-chroma:/chroma/chroma
     networks:
-      - network-reverse-proxy
+      - shared
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.chroma.rule=PathPrefix(`/chroma/`)
+      - traefik.http.routers.chroma.entrypoints=web
+      - traefik.http.routers.chroma.service=chroma-svc
+      - traefik.http.services.chroma-svc.loadbalancer.server.port=8000
+      - traefik.http.routers.chroma.middlewares=chroma-sp
+      - traefik.http.middlewares.chroma-sp.stripprefix.prefixes=/chroma
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
-    container_name: ${HOMELAB_NAME}-elasticsearch
+    container_name: ${STACK_PREFIX}-elasticsearch
     restart: always
     shm_size: 1g
     environment:
@@ -128,38 +160,57 @@ services:
     volumes:
       - volume-elasticsearch:/usr/share/elasticsearch/data
     networks:
-      - network-reverse-proxy
+      - shared
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=shared
+      - traefik.http.routers.elasticsearch.rule=PathPrefix(`/elasticsearch/`)
+      - traefik.http.routers.elasticsearch.entrypoints=web
+      - traefik.http.routers.elasticsearch.service=elasticsearch-svc
+      - traefik.http.services.elasticsearch-svc.loadbalancer.server.port=9200
+      - traefik.http.routers.elasticsearch.middlewares=elasticsearch-sp
+      - traefik.http.middlewares.elasticsearch-sp.stripprefix.prefixes=/elasticsearch
 
-  jupyterhub:
-    build:
-      context: ./jupyterhub
-      dockerfile: ./Dockerfile
-      args:
-        - HTTP_PROXY=${PROXY_ADDRESS}
-        - HTTPS_PROXY=${PROXY_ADDRESS}
-    container_name: ${HOMELAB_NAME}-jupyterhub
-    restart: unless-stopped
-    env_file:
-      - ../base.env
-    environment:
-      # - GITLAB_HOST=${GITLAB_HOST}
-      # - OAUTH_CALLBACK_URL=${OAUTH_CALLBACK_URL}
-      # - GITLAB_CLIENT_ID=${GITLAB_CLIENT_ID}
-      # - GITLAB_CLIENT_SECRET=${GITLAB_CLIENT_SECRET}
-      - HTTP_PROXY=${PROXY_ADDRESS}
-      - HTTPS_PROXY=${PROXY_ADDRESS}
-    networks:
-      - network-reverse-proxy
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
+  # jupyterhub:
+  #   build:
+  #     context: ./jupyterhub
+  #     dockerfile: ./Dockerfile
+  #     args:
+  #       - HTTP_PROXY=${PROXY_ADDRESS}
+  #       - HTTPS_PROXY=${PROXY_ADDRESS}
+  #   container_name: ${STACK_PREFIX}-jupyterhub
+  #   restart: unless-stopped
+  #   env_file:
+  #     - ../base.env
+  #   environment:
+  #     # - GITLAB_HOST=${GITLAB_HOST}
+  #     # - OAUTH_CALLBACK_URL=${OAUTH_CALLBACK_URL}
+  #     # - GITLAB_CLIENT_ID=${GITLAB_CLIENT_ID}
+  #     # - GITLAB_CLIENT_SECRET=${GITLAB_CLIENT_SECRET}
+  #     - HTTP_PROXY=${PROXY_ADDRESS}
+  #     - HTTPS_PROXY=${PROXY_ADDRESS}
+  #   networks:
+  #     - shared
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: all
+  #             capabilities: [ gpu ]
+  #   labels:
+  #     - traefik.enable=true
+  #     - traefik.docker.network=shared
+  #     - traefik.http.routers.jupyterhub.rule=PathPrefix(`/jupyterhub/`)
+  #     - traefik.http.routers.jupyterhub.entrypoints=web
+  #     - traefik.http.routers.jupyterhub.service=jupyterhub-svc
+  #     - traefik.http.services.jupyterhub-svc.loadbalancer.server.port=8000
+  #     - traefik.http.routers.jupyterhub.middlewares=jupyterhub-sp
+  #     - traefik.http.middlewares.jupyterhub-sp.stripprefix.prefixes=/jupyterhub
+
   # nni:
   #   image: docker.io/msranni/nni:latest
-  #   container_name: ${HOMELAB_NAME}-nni
+  #   container_name: ${STACK_PREFIX}-nni
   #   restart: unless-stopped
   #   env_file:
   #     - ../base.env
@@ -168,7 +219,7 @@ services:
   # https://docs.langflow.org/deployment-docker
   # langflow:
   #   image: docker.io/langflowai/langflow:latest
-  #   container_name: ${HOMELAB_NAME}-langflow
+  #   container_name: ${STACK_PREFIX}-langflow
   #   restart: unless-stopped
   #   ports:
   #     - 30111:7860
@@ -186,7 +237,7 @@ services:
 
   # langflow-db:
   #   image: docker.io/postgres:16
-  #   container_name: ${HOMELAB_NAME}-langflow-db
+  #   container_name: ${STACK_PREFIX}-langflow-db
   #   restart: unless-stopped
   #   env_file:
   #     - ../base.env
@@ -206,72 +257,71 @@ services:
   #     start_period: 5s
 
 
-  langfuse:
-    image: langfuse/langfuse:2
-    container_name: ${HOMELAB_NAME}-langfuse
-    depends_on:
-      langfuse-db:
-        condition: service_healthy
-    ports:
-      - "3000:3000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@langfuse-db:5432/postgres
-      - NEXTAUTH_SECRET=mysecret
-      - SALT=mysalt
-      - ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000 # generate via `openssl rand -hex 32`
-      - NEXT_PUBLIC_BASE_PATH=/langfuse
-      - NEXTAUTH_URL="http://localhost:3000/langfuse/api/auth"
-      - TELEMETRY_ENABLED=false
-      - LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES=false
-      - LANGFUSE_INIT_ORG_ID=${HOMELAB_NAME}-org
-      - LANGFUSE_INIT_ORG_NAME=${HOMELAB_NAME}-org
-      - LANGFUSE_INIT_PROJECT_ID=initial-project
-      - LANGFUSE_INIT_PROJECT_NAME=initial-project
-      - LANGFUSE_INIT_PROJECT_PUBLIC_KEY=lf_pk_1234567890
-      - LANGFUSE_INIT_PROJECT_SECRET_KEY=lf_sk_1234567890
-      - LANGFUSE_INIT_USER_EMAIL=user@example.com
-      - LANGFUSE_INIT_USER_NAME=John Doe
-      - LANGFUSE_INIT_USER_PASSWORD=password123
+  # langfuse:
+  #   image: langfuse/langfuse:2
+  #   container_name: ${STACK_PREFIX}-langfuse
+  #   depends_on:
+  #     langfuse-db:
+  #       condition: service_healthy
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - DATABASE_URL=postgresql://postgres:postgres@langfuse-db:5432/postgres
+  #     - NEXTAUTH_SECRET=mysecret
+  #     - SALT=mysalt
+  #     - ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000 # generate via `openssl rand -hex 32`
+  #     - NEXT_PUBLIC_BASE_PATH=/langfuse
+  #     - NEXTAUTH_URL="http://localhost:3000/langfuse/api/auth"
+  #     - TELEMETRY_ENABLED=false
+  #     - LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES=false
+  #     - LANGFUSE_INIT_ORG_ID=${STACK_PREFIX}-org
+  #     - LANGFUSE_INIT_ORG_NAME=${STACK_PREFIX}-org
+  #     - LANGFUSE_INIT_PROJECT_ID=initial-project
+  #     - LANGFUSE_INIT_PROJECT_NAME=initial-project
+  #     - LANGFUSE_INIT_PROJECT_PUBLIC_KEY=lf_pk_1234567890
+  #     - LANGFUSE_INIT_PROJECT_SECRET_KEY=lf_sk_1234567890
+  #     - LANGFUSE_INIT_USER_EMAIL=user@example.com
+  #     - LANGFUSE_INIT_USER_NAME=John Doe
+  #     - LANGFUSE_INIT_USER_PASSWORD=password123
 
-  langfuse-db:
-    image: postgres
-    container_name: ${HOMELAB_NAME}-langfuse-db
-    restart: always
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 3s
-      timeout: 3s
-      retries: 10
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=postgres
-    ports:
-      - 5432:5432
-    volumes:
-      - volume-langfuse-db:/var/lib/postgresql/data
+  # langfuse-db:
+  #   image: postgres
+  #   container_name: ${STACK_PREFIX}-langfuse-db
+  #   restart: always
+  #   healthcheck:
+  #     test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+  #     interval: 3s
+  #     timeout: 3s
+  #     retries: 10
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #     - POSTGRES_DB=postgres
+  #   ports:
+  #     - 5432:5432
+  #   volumes:
+  #     - volume-langfuse-db:/var/lib/postgresql/data
 
 networks:
-  network-reverse-proxy:
-    name: ${HOMELAB_NAME}-network-reverse-proxy
+  shared:
     external: true
   network-ollama:
-    name: ${HOMELAB_NAME}-network-ollama
+    name: ${STACK_PREFIX}-network-ollama
   network-langflow:
-    name: ${HOMELAB_NAME}-network-langflow
+    name: ${STACK_PREFIX}-network-langflow
 
 volumes:
   volume-ollama:
-    name: ${HOMELAB_NAME}-volume-ollama
+    name: ${STACK_PREFIX}-volume-ollama
   volume-ollama-build:
-    name: ${HOMELAB_NAME}-volume-ollama-build
+    name: ${STACK_PREFIX}-volume-ollama-build
   volume-langflow:
-    name: ${HOMELAB_NAME}-volume-langflow
+    name: ${STACK_PREFIX}-volume-langflow
   volume-langflow-db:
-    name: ${HOMELAB_NAME}-volume-langflow-db
+    name: ${STACK_PREFIX}-volume-langflow-db
   volume-chroma:
-    name: ${HOMELAB_NAME}-volume-chroma
+    name: ${STACK_PREFIX}-volume-chroma
   volume-elasticsearch:
-    name: ${HOMELAB_NAME}-volume-elasticsearch
+    name: ${STACK_PREFIX}-volume-elasticsearch
   volume-langfuse-db:
-    name: ${HOMELAB_NAME}-volume-langfuse-db
+    name: ${STACK_PREFIX}-volume-langfuse-db
