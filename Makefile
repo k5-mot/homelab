@@ -14,15 +14,15 @@ all: up ## Default target
 
 .PHONY: up
 up: ## Up all stacks in order
-	docker network create shared
+	-docker network create shared
 	@for dir in $(STACK_DIRS); do \
-		echo "Starting $$dir..."; \
-		docker compose --env-file .env -f $$dir/docker-compose.yml up -d; \
+		echo -e "\n\e[34mStarting $$dir...\e[m"; \
+		docker compose --env-file .env -f $$dir/docker-compose.yml up -d --remove-orphans; \
 	done
 
 down: ## Down all stacks in reverse order
 	@for dir in $(shell echo "$(STACK_DIRS)" | tr ' ' '\n' | tac); do \
-		echo "Stopping $$dir..."; \
+		echo -e "\n\e[34mStopping $$dir...\e[m"; \
 		docker compose --env-file .env -f $$dir/docker-compose.yml down; \
 	done
 	docker network rm shared
@@ -30,9 +30,13 @@ down: ## Down all stacks in reverse order
 .PHONY: status
 status: ## Show status of all stacks
 	@for dir in $(STACK_DIRS); do \
-		echo "\nStatus for $$dir:"; \
-		docker compose -f $$dir/docker-compose.yml ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"; \
+		echo -e "\n\n\e[34mStatus for $$dir:\e[m"; \
+		docker compose --env-file .env -f $$dir/docker-compose.yml ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"; \
 	done
+
+.PHONY: ps
+ps: ## Show status of all containers
+	docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"; \
 
 .PHONY: restart
 restart: down up ## Restart all stacks

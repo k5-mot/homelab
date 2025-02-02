@@ -17,7 +17,7 @@ services:
       - volume-prometheus:/prometheus
     networks:
       - shared
-      - network-grafana
+      - network-prometheus
     depends_on:
       - nginx-exporter
       - node-exporter
@@ -40,7 +40,7 @@ services:
       - --nginx.scrape-uri=http://${STACK_PREFIX}-nginx:8080/stub_status
     networks:
       - shared
-      - network-grafana
+      - network-prometheus
     labels:
       - traefik.enable=true
       - traefik.docker.network=shared
@@ -64,7 +64,7 @@ services:
       - /:/host:ro,rslave
     networks:
       - shared
-      - network-grafana
+      - network-prometheus
     labels:
       - traefik.enable=true
       - traefik.docker.network=shared
@@ -91,7 +91,7 @@ services:
       - /dev/disk/:/dev/disk:ro
     networks:
       - shared
-      - network-grafana
+      - network-prometheus
     labels:
       - traefik.enable=true
       - traefik.docker.network=shared
@@ -120,7 +120,7 @@ services:
   #     - /var/run:/var/run:rw
   #   networks:
   #     - shared
-  #     - network-grafana
+  #     - network-prometheus
   #   labels:
   #     - traefik.enable=true
   #     - traefik.docker.network=shared
@@ -150,15 +150,14 @@ services:
   #     - "${DCGM_EXPORTER_HOST_PORT}:9400"
   #   networks:
   #     - gpu_metrics
+        # - network-prometheus
 
 networks:
   shared:
     external: true
-  network-grafana:
-    name: ${STACK_PREFIX}-network-grafana
+  network-prometheus:
+    name: ${STACK_PREFIX}-network-prometheus
 
 volumes:
   volume-prometheus:
     name: ${STACK_PREFIX}-volume-prometheus
-  volume-portainer:
-    name: ${STACK_PREFIX}-volume-portainer
