@@ -8,6 +8,8 @@ STACK_DIRS = 00-base-stack \
              32-prj-stack \
              33-mon-stack
 
+#  40-gai-stack
+
 
 .PHONY: all
 all: up ## Default target
