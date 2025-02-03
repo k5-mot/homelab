@@ -1,5 +1,5 @@
 [project]
-name = "langchain_motex"
+name = "langchain-motapp"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -21,15 +21,20 @@ dependencies = [
     "markitdown>=0.0.1a3",
     "ollama>=0.4.7",
     "pdfplumber>=0.11.5",
-    "pytest>=8.3.4",
     "python-dotenv>=1.0.1",
     "unstructured>=0.16.17",
     "unstructured-client>=0.29.0",
 ]
 
-[tool.setuptools]
-package-dir = {"" = "src/langchain_motex"}
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "ruff>=0.9.4",
+]
 
 [tool.pytest.ini_options]
-pythonpath = "src"
-testpaths = ["tests",]
+pythonpath = "src/"
+testpaths = ["tests"]
+
+[tool.uv.workspace]
+members = ["src/langchain_motex"]

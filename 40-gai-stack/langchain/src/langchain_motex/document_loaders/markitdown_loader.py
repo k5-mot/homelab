@@ -17,20 +17,23 @@ class MarkItDownLoader(BaseLoader):
         self,
         file_path: Union[str, Path],
     ):
+        """Initialize with file path."""
         self.file_path = file_path
+        if "~" in self.file_path:
+            self.file_path = os.path.expanduser(self.file_path)
+        if not os.path.isfile(self.file_path):
+            raise ValueError(f"Not found {self.file_path}.")
+
 
     def lazy_load(self) -> Iterator[Document]:
-        """Load"""
+        """Load given path as single page."""
         try:
-            md = MarkItDown()
-            result = md.convert(self.file_path)
-            docs = [Document(page_content=result.text_content)]
+            loader = MarkItDown()
+            result = loader.convert(self.file_path)
+            yield Document(page_content=result.text_content)
         except Exception as ex:
-            docs = []
-            print(f"{ex}")
+            print(f"Error loading {self.file_path}: {ex}")
 
-        for doc in docs:
-            yield doc
 
 
 if __name__ == "__main__":

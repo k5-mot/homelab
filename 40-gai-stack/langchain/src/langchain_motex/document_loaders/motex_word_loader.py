@@ -6,16 +6,12 @@ from typing import Iterator, Union
 
 from dotenv import load_dotenv
 from langchain_community.document_loaders import (
-    PDFMinerLoader,
-    PDFPlumberLoader,
-    PyPDFium2Loader,
-    PyPDFLoader,
-    UnstructuredPDFLoader,
+    Docx2txtLoader,
+    UnstructuredWordDocumentLoader,
 )
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 
-# from langchain_motex.document_loaders import DoclingLoader, MarkItDownLoader
 from langchain_motex.document_loaders.docling_loader import DoclingLoader
 from langchain_motex.document_loaders.markitdown_loader import MarkItDownLoader
 
@@ -23,7 +19,7 @@ UNSTRUCTURED_API_URL = os.getenv("UNSTRUCTURED_API_URL", "http://homelab-unstruc
 UNSTRUCTURED_API_KEY = os.getenv("UNSTRUCTURED_API_KEY", "unstructured")
 
 
-class MotexPDFLoader(BaseLoader):
+class MotexWordLoader(BaseLoader):
 
     file_path: Union[str, Path]
 
@@ -39,7 +35,7 @@ class MotexPDFLoader(BaseLoader):
         ext = os.path.splitext(self.file_path)[1]
         if not os.path.isfile(self.file_path):
             raise ValueError(f"Not found {self.file_path}.")
-        elif ext not in [".pdf"]:
+        elif ext not in [".docx", ".docm", ".doc", "dot"]:
             raise ValueError(f"Invalid file {self.file_path}.")
 
 
@@ -49,11 +45,8 @@ class MotexPDFLoader(BaseLoader):
         loaders = [
             DoclingLoader(file_path=self.file_path),
             MarkItDownLoader(file_path=self.file_path),
-            PDFPlumberLoader(file_path=self.file_path),
-            PyPDFium2Loader(file_path=self.file_path),
-            PDFMinerLoader(file_path=self.file_path),
-            PyPDFLoader(file_path=self.file_path),
-            UnstructuredPDFLoader(
+            Docx2txtLoader(file_path=self.file_path),
+            UnstructuredWordDocumentLoader(
                 file_path=self.file_path,
                 partition_via_api=True,
                 url=UNSTRUCTURED_API_URL,
@@ -78,10 +71,10 @@ if __name__ == "__main__":
         load_dotenv()
 
     FILES = [
-        "../docs/sample/nri.pdf",
+        "../docs/sample/mitsuico.docx",
     ]
     for file in FILES:
-        loader = MotexPDFLoader(file)
+        loader = MotexWordLoader(file)
         docs = loader.load()
         print(docs)
         for doc in docs:
