@@ -4,7 +4,7 @@ services:
 
   # https://docs.gitlab.com/ee/install/docker.html
   gitlab:
-    image: docker.io/gitlab/gitlab-ee:17.7.0-ee.0
+    image: docker.io/gitlab/gitlab-ee:17.7.3-ee.0
     container_name: ${STACK_PREFIX}-gitlab
     restart: always
     shm_size: 256m

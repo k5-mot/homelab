@@ -5,6 +5,11 @@ services:
   # ID:admin PW:admin
   redmine:
     image: redmine:latest-revpro
+    restart: always
+    ports:
+      - 3000:3000
+    env_file:
+      - ../.env
     build:
       context: .
       dockerfile: ./redmine/Dockerfile
@@ -17,6 +22,7 @@ services:
       REDMINE_SECRET_KEY_BASE: supersecretkey
       REDMINE_DB_PORT: 5432
       # RAILS_RELATIVE_URL_ROOT: /redmine
+      REDMINE_RELATIVE_URL_ROOT: /redmine
     volumes:
       - volume-redmine:/usr/src/redmine/files
     networks:

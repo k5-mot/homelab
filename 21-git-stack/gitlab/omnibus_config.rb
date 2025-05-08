@@ -3,12 +3,12 @@
 # https://qiita.com/KO_YAmajun/items/1a511a3378a67358bb04
 # https://qiita.com/KO_YAmajun/items/b4e894f72697348e3beb
 # roles ['monitoring_role']
-external_url 'http://192.168.11.30/gitlab'
+external_url 'http://192.168.11.30/gitlab/'
 # external_url 'http://192.168.11.2:30080'
 # gitlab_rails['initial_root_password'] = 'root'
 gitlab_rails['time_zone'] = 'Tokyo'
 # gitlab_rails['gitlab_shell_ssh_port'] = 2222
-postgresql['enable'] = true
+# postgresql['enable'] = true
 # [OPTION] HTTPS settings
 # nginx['listen_port'] = 80
 # nginx['listen_https'] = false
@@ -58,18 +58,18 @@ postgresql['enable'] = true
 #     cpu_shares: 512,
 #   },
 # }
-gitaly['env'] = {
-  'MALLOC_CONF' => 'dirty_decay_ms:1000,muzzy_decay_ms:1000',
-  'GITALY_COMMAND_SPAWN_MAX_PARALLEL' => '2'
-}
+# gitaly['env'] = {
+#   'MALLOC_CONF' => 'dirty_decay_ms:1000,muzzy_decay_ms:1000',
+#   'GITALY_COMMAND_SPAWN_MAX_PARALLEL' => '2'
+# }
 
 # [OPTION] Disable monitoring by Prometheus/Grafana/Alertmanager
 # https://docs.gitlab.com/omnibus/settings/memory_constrained_envs.html#disable-monitoring
-prometheus_monitoring['enable'] = true
+# prometheus_monitoring['enable'] = true
 # prometheus_monitoring['enable'] = false
-prometheus['enable'] = true
+# prometheus['enable'] = true
 # prometheus['enable'] = false
-prometheus['listen_address'] = '0.0.0.0:9090'
+# prometheus['listen_address'] = '0.0.0.0:9090'
 # prometheus['monitor_kubernetes'] = false
 # gitlab_exporter['enable'] = true
 
@@ -88,9 +88,9 @@ prometheus['listen_address'] = '0.0.0.0:9090'
 
 # [OPTION] Configure how GitLab handles memory
 # https://docs.gitlab.com/omnibus/settings/memory_constrained_envs.html#configure-how-gitlab-handles-memory
-gitlab_rails['env'] = {
-  'MALLOC_CONF' => 'dirty_decay_ms:1000,muzzy_decay_ms:1000'
-}
+# gitlab_rails['env'] = {
+#   'MALLOC_CONF' => 'dirty_decay_ms:1000,muzzy_decay_ms:1000'
+# }
 
 # [OPTION] Disable GitLab agent server (KAS)
 # https://docs.gitlab.com/charts/charts/gitlab/kas/index.html

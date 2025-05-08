@@ -15,6 +15,11 @@ services:
       - --entryPoints.web.address=:80
       - --entryPoints.websecure.address=:443
       - --entryPoints.ssh.address=:2222
+      # - --entryPoints.smtp.address=:25
+      # - --entryPoints.smtps.address=:465
+      # - --entryPoints.esmtp.address=:587
+      # - --entryPoints.imap.address=:143
+      # - --entryPoints.imaps.address=:993
       # - --certificatesresolvers.myresolver.acme.tlschallenge=true
       # - --certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
       # - --certificatesresolvers.myresolver.acme.email=postmaster@example.com
@@ -26,6 +31,11 @@ services:
       - 443:443
       - 2222:2222
       - 8080:8080
+      # - 25:25
+      # - 465:465
+      # - 587:587
+      # - 143:143
+      # - 993:993
     volumes:
       # - ./base/ssl:/ssl
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -63,6 +73,55 @@ services:
       # - ./nginx/certificate/:/etc/certificate/:rw
     networks:
       - shared
+
+  # mailserver:
+  #   image: ghcr.io/docker-mailserver/docker-mailserver:latest
+  #   container_name: ${STACK_PREFIX}-mailserver
+  #   # Provide the FQDN of your mail server here (Your DNS MX record should point to this value)
+  #   hostname: localhost
+  #   env_file: mailserver.env
+  #   # More information about the mail-server ports:
+  #   # https://docker-mailserver.github.io/docker-mailserver/latest/config/security/understanding-the-ports/
+  #   # ports:
+  #   #   - "25:25"    # SMTP  (explicit TLS => STARTTLS, Authentication is DISABLED => use port 465/587 instead)
+  #   #   - "143:143"  # IMAP4 (explicit TLS => STARTTLS)
+  #   #   - "465:465"  # ESMTP (implicit TLS)
+  #   #   - "587:587"  # ESMTP (explicit TLS => STARTTLS)
+  #   #   - "993:993"  # IMAP4 (implicit TLS)
+  #   volumes:
+  #     - ./docker-data/dms/mail-data/:/var/mail/
+  #     - ./docker-data/dms/mail-state/:/var/mail-state/
+  #     - ./docker-data/dms/mail-logs/:/var/log/mail/
+  #     - ./docker-data/dms/config/:/tmp/docker-mailserver/
+  #     - /etc/localtime:/etc/localtime:ro
+  #   networks:
+  #     - shared
+  #   restart: always
+  #   stop_grace_period: 1m
+  #   # Uncomment if using `ENABLE_FAIL2BAN=1`:
+  #   # cap_add:
+  #   #   - NET_ADMIN
+  #   healthcheck:
+  #     test: "ss --listening --tcp | grep -P 'LISTEN.+:smtp' || exit 1"
+  #     timeout: 3s
+  #     retries: 5
+  #   labels:
+  #     - traefik.enable=true
+  #     - traefik.docker.network=shared
+  #     - traefik.http.routers.mail-smtp.rule=HostSNI(`*`)
+  #     - traefik.http.routers.mail-smtp.entrypoints=smtp
+
+  #     - traefik.http.routers.mail-smtps.rule=HostSNI(`*`)
+  #     - traefik.http.routers.mail-smtps.entrypoints=smtps
+
+  #     - traefik.http.routers.mail-esmtp.rule=HostSNI(`*`)
+  #     - traefik.http.routers.mail-esmtp.entrypoints=esmtp
+
+  #     - traefik.http.routers.mail-imap.rule=HostSNI(`*`)
+  #     - traefik.http.routers.mail-imap.entrypoints=imap
+
+  #     - traefik.http.routers.mail-imaps.rule=HostSNI(`*`)
+  #     - traefik.http.routers.mail-imaps.entrypoints=imaps
 
 networks:
   shared:

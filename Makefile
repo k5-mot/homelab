@@ -19,7 +19,7 @@ up: ## Up all stacks in order
 	-docker network create shared
 	@for dir in $(STACK_DIRS); do \
 		echo -e "\n\e[34mStarting $$dir...\e[m"; \
-		docker compose --env-file .env -f $$dir/docker-compose.yml up -d --remove-orphans; \
+		docker compose --env-file .env -f $$dir/docker-compose.yml up -d --remove-orphans --build; \
 	done
 
 down: ## Down all stacks in reverse order
